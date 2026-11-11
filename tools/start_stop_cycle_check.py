@@ -21,8 +21,8 @@ OVERALL line use PASS / FAIL / ABORT, matching the SOP record fields.
 Exit code 0 = all rounds PASS.
 
 Usage:
-    python tools/start_stop_cycle_check.py --config a1z.yaml --tag M1
-    python tools/start_stop_cycle_check.py --config a1z_g1z.yaml --rounds 1 --hold-s 10
+    python tools/start_stop_cycle_check.py --tag M1
+    python tools/start_stop_cycle_check.py --rounds 1 --hold-s 10
 """
 
 import argparse

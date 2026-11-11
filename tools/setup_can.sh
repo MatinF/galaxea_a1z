@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Linux SocketCAN 一键配置脚本（HHS USB-CANFD 适配器）
+# Linux SocketCAN 一键配置脚本（Galaxea USB2CANFD 适配器）
 #
-# 1. 加载 gs_usb 内核驱动并注册 HHS VID/PID
+# 1. 加载 gs_usb 内核驱动并注册 Galaxea USB2CANFD VID/PID
 # 2. 配置并启动 CAN 接口（1 Mbps）
 # 3. 发送一帧测试报文自检
 set -euo pipefail
@@ -14,7 +14,7 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-echo "==> [1/3] 加载 gs_usb 驱动并注册 HHS VID/PID"
+echo "==> [1/3] 加载 gs_usb 驱动并注册 Galaxea USB2CANFD VID/PID"
 modprobe gs_usb
 # 已绑定时忽略报错
 sh -c 'echo "a8fa 8598" > /sys/bus/usb/drivers/gs_usb/new_id' 2>/dev/null || true

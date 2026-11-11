@@ -3,17 +3,15 @@
 
 Usage
 -----
-    # Record and save (config defaults to the repo-root a1z.yaml):
+    # Record and save (the repository's config.yaml is loaded automatically):
     python examples/teach_and_play.py record teach.json
-    python examples/teach_and_play.py record teach.json --can can1 --sample-hz 100
+    python examples/teach_and_play.py --can can1 record teach.json --sample-hz 100
 
     # Load and play:
     python examples/teach_and_play.py play teach.json
     python examples/teach_and_play.py play teach.json --speed 0.5 --loop
 
-    # With an attached G1Z gripper (or set with_gripper: true in a1z.yaml):
-    python examples/teach_and_play.py record teach.json --with-gripper
-    python examples/teach_and_play.py play teach.json --with-gripper
+    # For G1Z, set with_gripper: true in config.yaml before recording or playing.
 """
 
 import argparse
@@ -21,7 +19,6 @@ import logging
 import signal
 import threading
 import time
-from pathlib import Path
 
 import numpy as np
 
@@ -234,11 +231,6 @@ def cmd_play(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    # The machine config is the source of truth: default --config to the
-    # repo-root a1z.yaml so record/play need no flags on a properly
-    # configured machine (explicit --config still overrides).
-    _default_config = Path(__file__).resolve().parent.parent / "a1z.yaml"
-
     parser = argparse.ArgumentParser(description="A1Z teach-and-play")
     parser.add_argument("--can", default=None, help="CAN channel (default: can0)")
     parser.add_argument("--bustype", default=None,
@@ -246,10 +238,7 @@ def main() -> None:
                              "Default: socketcan on Linux, gs_usb on macOS/Windows.")
     parser.add_argument("--with-gripper", action="store_true",
                         help="Attach the G1Z gripper (record/play 7th DOF).")
-    add_config_argument(
-        parser,
-        default=str(_default_config) if _default_config.exists() else None,
-    )
+    add_config_argument(parser)
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_record = sub.add_parser("record", help="Record a trajectory and save to file")

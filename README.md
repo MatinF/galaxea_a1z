@@ -5,17 +5,12 @@
 # A1Z — 6-DOF 机械臂 Python SDK（可选 G1Z 夹爪）
 
 <p align="center">
-  <img src="docs/images/A1Z_G1Z.png" alt="A1Z 机械臂（带 G1Z 夹爪）" width="500"/>
+  <img src="assets/A1Z_G1Z.png" alt="A1Z 机械臂（带 G1Z 夹爪）" width="500"/>
 </p>
 
 A1Z 六轴机械臂的开源 Python SDK，面向机器人研发、算法验证和上层应用集成。项目提供跨平台 CAN 通信、电机控制、Pinocchio 动力学与运动学、重力补偿、零力示教、位置保持及可选 G1Z 夹爪控制。
 
-代码仓库：[github.com/userguide-galaxea/GALAXEA-A1Z](https://github.com/userguide-galaxea/GALAXEA-A1Z)
-
-当前跨平台验证分支：`feat/cross-platform-g1z-fixes`
-
-> [!CAUTION]
-> 本 SDK 会直接使能和控制真实机械臂，不是经认证的功能安全系统。首次运行任何主动命令前，请固定机械臂、清空工作空间、确保急停可触及，并从低补偿系数和低速度开始。
+代码仓库：[https://github.com/userguide-galaxea/galaxea_a1z](https://github.com/userguide-galaxea/galaxea_a1z)
 
 ## 快速导航
 
@@ -23,27 +18,27 @@ A1Z 六轴机械臂的开源 Python SDK，面向机器人研发、算法验证�
 - [平台与硬件支持](#平台与硬件支持)
 - [安装](#安装)
 - [快速开始](#快速开始)
-- [CAN 通信故障排查](#can-通信故障排查)
+- [CAN 通信故障排查](docs/can-troubleshooting.md#can-通信故障排查)
 - [API 参考](#api-参考)
 - [安全注意事项](#安全注意事项)
 - [开发与贡献](#开发与贡献)
 
 ## 功能特性
 
-- **跨平台 CAN 后端**：Linux 使用 SocketCAN，macOS/Windows 可使用 HHS `gs_usb` 用户态后端，也可选 PEAK PCAN-USB。
+- **跨平台 CAN 后端**：Linux 使用 SocketCAN，macOS/Windows 可通过 `gs_usb` 用户态后端连接 Galaxea USB2CANFD 适配器，也可选 PEAK PCAN-USB。
 - **六轴机械臂控制**：MotorA/MotorB 混合链、MIT 力位混控、250 Hz 默认控制循环。
 - **动力学与运动学**：基于 Pinocchio 的 RNEA 重力补偿、FK 和 IK。
 - **交互式示例**：重力补偿、位置保持、零力示教与回放、夹爪测试。
 - **诊断与安全收尾**：CAN 检查、被动监听、电机扫描、错误码解析、中断后重复失能。
-- **可配置夹爪模型**：通过 `a1z_g1z.yaml` 同步启用 G1Z 夹爪和对应 URDF 质量模型。
+- **可配置夹爪模型**：在 `config.yaml` 中启用 G1Z 夹爪时自动选用对应的 URDF 质量模型。
 
 ## 平台与硬件支持
 
 | 平台 | 默认后端 | 适配器/运行时 | 说明 |
 |------|----------|----------------|------|
 | Linux | SocketCAN | SocketCAN 兼容 CAN 接口 | 需配置 1 Mbps 接口；部分内核版本可能需要 `gs_usb` 补丁 |
-| macOS | `gs_usb` | HHS USB-CANFD（`a8fa:8598`） | 用户态 USB 后端；当前版本已通过 250 Hz 真机控制验证 |
-| Windows | `gs_usb` | HHS USB-CANFD（`a8fa:8598`）+ libusb 兼容驱动 | 先使用现有驱动；无法打开时再考虑 Zadig/WinUSB |
+| macOS | `gs_usb` | Galaxea USB2CANFD 适配器 | 用户态 USB 后端；当前版本已通过 250 Hz 真机控制验证 |
+| Windows | `gs_usb` | Galaxea USB2CANFD 适配器+ libusb 兼容驱动 | 先使用现有驱动；无法打开时再考虑 Zadig/WinUSB |
 | macOS / Windows | `pcan` | PEAK PCAN-USB + 官方运行时 | 通过 `--bustype pcan` 显式选择 |
 
 ### 验证层级
@@ -54,12 +49,6 @@ A1Z 六轴机械臂的开源 Python SDK，面向机器人研发、算法验证�
 2. **电机通信层**：机械臂已上电、接线和终端电阻正确，所有关节能返回有效反馈。使用 `tools/motor_diag.py --scan`。
 3. **控制层**：在真实负载下验证频率、丢帧/延迟、稳定性、限位和重力补偿方向。该层必须在本地硬件上完成，前两层通过不代表本层通过。
 
-当前真机验证状态（2026-09）：
-
-| 平台/组合 | 结果 |
-|-----------|------|
-| macOS + HHS `a8fa:8598` + 异步用户态后端 | 无夹爪与启用 G1Z 夹爪两种配置均已通过 250 Hz 真机控制验证 |
-| Windows + HHS | 无夹爪与启用 G1Z 夹爪两种配置均已通过 250 Hz 真机重力补偿控制验证 |
 
 ## 项目结构
 
@@ -112,7 +101,7 @@ a1z/
 
 - Python >= 3.11（所有平台统一支持基线）
 - **Linux**：SocketCAN（需硬件 CAN 接口）
-- **macOS / Windows**：通过 HHS USB-CANFD 适配器（VID:PID `a8fa:8598`）连接，SDK 自动使用 gs_usb 用户态后端
+- **macOS / Windows**：通过 Galaxea USB2CANFD 适配器连接，SDK 自动使用 gs_usb 用户态后端
 - URDF 模型文件（包内自带，见 `a1z/robot_models/a1z/`。默认使用 `A1Z_Flange.urdf`；启用夹爪时使用 `A1Z_G1Z.urdf`）
 
 > 跨平台支持详情见 [跨平台 CAN 配置](#跨平台-can-配置) 章节。
@@ -121,8 +110,8 @@ a1z/
 
 ```bash
 
-# 克隆当前跨平台验证分支
-git clone --branch feat/cross-platform-g1z-fixes --single-branch https://github.com/userguide-galaxea/GALAXEA-A1Z.git GALAXEA-A1Z
+# 克隆 SDK
+git clone --branch main https://github.com/userguide-galaxea/galaxea_a1z.git GALAXEA-A1Z
 
 cd GALAXEA-A1Z
 
@@ -149,55 +138,66 @@ python -m pip install -e ".[gs_usb]"
 
 ### 配置文件（可选）
 
-仓库根目录提供了两份配置文件，可在其中一次性设置 CAN 通道、URDF、夹爪等参数。所有支持 `--config` 的脚本（examples、tools、a1zctl）都会读取该文件，且命令行参数优先级高于配置文件。
+支持 `--config` 的示例、工具和 `a1zctl serve` 默认读取仓库根目录的 `config.yaml`。需要临时使用其他配置时，可传入 `--config PATH`。显式传入的命令行参数优先。
 
-- `a1z.yaml`：默认配置，无夹爪（`with_gripper: false`）
-- `a1z_g1z.yaml`：末端装有 G1Z 夹爪时使用（`with_gripper: true`，自动切换为 A1Z_G1Z.urdf）
+- `with_gripper: false`（默认）：无夹爪，使用 `A1Z_Flange.urdf`。
+- `with_gripper: true`：启用 G1Z 夹爪，自动选用 `A1Z_G1Z.urdf`。
 
 ```yaml
 can_channel: can0
 control_freq_hz: 250
 gravity_comp_factor: 1.0
-zero_gravity_mode: true
 with_gripper: false
 ```
 
-> 配置文件中还可覆盖 `default_kp` / `default_kd`（出厂默认值为真机调优增益，见 [默认控制参数](#默认控制参数)）。CAN 帧间隔（`inter_cmd_gap_us`）为 `get_a1z_robot()` 构造参数，不经配置文件设置。
+| 参数 | 说明 |
+|---|---|
+| `gripper_max_torque` | G1Z 最大夹持力矩，单位 N·m。 |
+| `urdf_path` | 取消注释并填写路径，可覆盖按夹爪配置自动选用的 URDF。 |
+| `can_channel`, `bustype` | CAN 接口和后端。后端可选 `socketcan`、`gs_usb`、`pcan`、`slcan`。自动选择时，Linux 用 `socketcan`，macOS 和 Windows 用 `gs_usb`。 |
+| `motor_a_use_new_enable_protocol` | 仅在确认 MotorA 固件支持 `0x7FF` 使能协议时设为 `true`。 |
+| `control_freq_hz`, `min_freq_hz` | 控制频率和低频保护阈值，单位 Hz。频率持续低于阈值会触发保护停机。 |
+| `gravity_comp_factor` | 重力补偿系数，`0` 关闭，`1` 全额补偿。 |
+| `zero_gravity_mode` | `true` 为零力漂浮，`false` 为位置保持。省略时按命令默认模式运行。 |
+| `default_kp`, `default_kd` | 按 J1–J6 排列的位置和速度增益。取消对应行的注释并修改数值，可覆盖[代码默认值](#默认控制参数)。 |
+
+CAN 帧间隔通过 `get_a1z_robot(inter_cmd_gap_us=...)` 设置。
 
 使用示例：
 
+> [!CAUTION]
+> 首次运行前，请固定机械臂、清空工作空间，并确保物理急停可触及。
+
 ```bash
-python examples/position_hold.py --config a1z.yaml
-python examples/position_hold.py --config a1z_g1z.yaml   # 带夹爪
-python tools/a1zctl serve --config a1z_g1z.yaml
-python tools/motor_diag.py --scan --config a1z.yaml
-python tools/set_zero.py --all --config a1z.yaml
+python examples/position_hold.py
+python tools/a1zctl serve
+python tools/motor_diag.py --scan
+python tools/set_zero.py --all
 ```
 
 ### 配置 CAN 总线（SocketCAN 模式）
 
 注意：检查can盒电阻是否正确安装！
 
-使用 HHS USB-CANFD 适配器（VID/PID `a8fa:8598`）：
+使用 Galaxea USB2CANFD 适配器：
 
 ```bash
 # 1. 加载驱动
 sudo modprobe gs_usb
 
-# 2. 将 HHS 适配器绑定到 gs_usb（已绑定时忽略报错）
-sudo sh -c 'echo "a8fa 8598" > /sys/bus/usb/drivers/gs_usb/new_id' 2>/dev/null || true
-
-# 3. 确认接口出现（单适配器通常为 can0）
+# 2. 确认接口出现（单适配器通常为 can0）
 ip link show type can
 
-# 4. 配置并启动（1 Mbps）
+# 3. 配置并启动（1 Mbps）
 sudo ip link set can0 type can bitrate 1000000
 sudo ip link set can0 up
 ```
 
+如果没有出现 CAN 接口，参见 [Linux 驱动排障](docs/can-troubleshooting.md#3-linux检查内核版本并修复)。
+
 #### macOS（gs_usb 用户态模式）
 
-macOS 没有 SocketCAN，SDK 会自动检测平台并使用 gs_usb 用户态后端连接 HHS USB-CANFD 适配器，**无需手动配置 CAN 接口**。
+macOS 没有 SocketCAN，SDK 会自动检测平台并使用 gs_usb 用户态后端连接 Galaxea USB2CANFD 适配器，**无需手动配置 CAN 接口**。
 
 ```bash
 # 1. 安装 SDK + gs_usb extras（含内置 libusb，通常无需 brew）
@@ -236,8 +236,6 @@ python -c "import pinocchio, can, usb, usb1, gs_usb; print('Environment OK')"
 python tools\verify_can_win.py
 ```
 
-> ⚠️ 先不使用 Zadig 运行 `verify_can_win.py`。如果报 `Cannot find device 0` 或权限/驱动错误，再核对 VID:PID `a8fa:8598` 并考虑用 Zadig 绑定 WinUSB。更换驱动前请记录原驱动，因为这可能影响厂商工具。`verify_can_win.py` 成功仅证明适配器可打开并接受发送调用，不等于电机在线或 250 Hz 重力补偿已验证。
-
 #### 跨平台 CAN 配置
 
 SDK 默认按平台自动选择 CAN 后端：
@@ -245,9 +243,9 @@ SDK 默认按平台自动选择 CAN 后端：
 | 平台 | 适配器 | 安装 | 使用 |
 |------|--------|------|------|
 | Linux | SocketCAN 内核驱动 | `python -m pip install -e .` | `--can can0` |
-| **macOS** | **HHS**（`a8fa:8598`） | `python -m pip install -e ".[gs_usb]"` | （默认）`gs_usb` |
+| **macOS** | Galaxea USB2CANFD 适配器 | `python -m pip install -e ".[gs_usb]"` | （默认）`gs_usb` |
 | **macOS** | **PEAK PCAN-USB** | `python -m pip install -e ".[pcan]"` + MacCAN PCBUSB 运行时 | `--bustype pcan --can PCAN_USBBUS1` |
-| **Windows** | **HHS**（`a8fa:8598`） | `python -m pip install -e ".[gs_usb]"`；仅驱动不兼容时使用 Zadig/WinUSB | （默认）`gs_usb` |
+| **Windows** | Galaxea USB2CANFD 适配器 | `python -m pip install -e ".[gs_usb]"`；仅驱动不兼容时使用 Zadig/WinUSB | （默认）`gs_usb` |
 | **Windows** | **PEAK PCAN-USB** | `python -m pip install -e ".[pcan]"` + PEAK 官方驱动 | `--bustype pcan --can PCAN_USBBUS1` |
 
 不传 `--bustype` 时使用 OS 默认值：Linux 默认 `socketcan`/`can0`，macOS/Windows 默认 `gs_usb`/设备序号 `0`。
@@ -269,34 +267,29 @@ robot = get_a1z_robot(inter_cmd_gap_us=0)        # 关闭 pacing（恢复旧的�
 
 ### 使用 example 脚本
 
-> ⚠️ **带 G1Z 夹爪时，以下所有命令都要加 `--config a1z_g1z.yaml`**（或在支持的脚本上加 `--with-gripper`）。这不只是控制夹爪——重力补偿的动力学模型需要包含夹爪的质量，缺了它补偿力矩会偏小，机械臂会缓慢下垂。
+> 装有 G1Z 夹爪时，在 `config.yaml` 中设置 `with_gripper: true`，使重力补偿计入夹爪质量。
 
 ```bash
-# 零力漂浮（默认 URDF A1Z_Flange.urdf；带夹爪用 --config a1z_g1z.yaml 自动切换 A1Z_G1Z.urdf）
-
-# 从小补偿因子开始（推荐首次调试方式）
+# 首次调试从较低的重力补偿系数开始
 python examples/gravity_comp.py --gravity_factor 0.3
 
 # 确认补偿方向正确后提升到全补偿
 python examples/gravity_comp.py --gravity_factor 1.0
 
-# 带 G1Z 夹爪：指定夹爪配置（重力补偿会包含夹爪质量）
-python examples/gravity_comp.py --config a1z_g1z.yaml --gravity_factor 0.3
-
 # 位置保持模式
 python examples/gravity_comp.py --mode hold
 
-# 位置保持 + 移动到目标
+# 位置保持 + 低速移动到目标（with_gripper: false）
 python examples/position_hold.py --q_target_deg 0,30,-20,-15,0,0 --speed 0.5
 
-# 位置保持 + 移动到目标（带夹爪，7-DOF）
-python examples/position_hold.py --with-gripper --q_target_deg 0,30,-20,-15,0,0,0.5 --speed 0.5
+# 位置保持 + 低速移动到目标（with_gripper: true，第 7 个值为夹爪开度）
+python examples/position_hold.py --q_target_deg 0,30,-20,-15,0,0,0.5 --speed 0.5
 
 # 夹爪测试（自由行程 + 力矩饱和验证）
 python examples/gripper_hybrid_test.py --can can0
 ```
 
-> ⚠️ **如果上述命令报错或机械臂无反应**，请跳转到 [CAN 通信故障排查](#can-通信故障排查)。
+> ⚠️ **如果上述命令报错或机械臂无反应**，请跳转到 [CAN 通信故障排查](docs/can-troubleshooting.md#can-通信故障排查)。
 
 ### 零力示教与回放
 
@@ -310,9 +303,6 @@ python examples/teach_and_play.py record teach.json
 
 # 指定 CAN 口和采样频率
 python examples/teach_and_play.py --can can1 record teach.json --sample-hz 100
-
-# 带 G1Z 夹爪录制（7-DOF）
-python examples/teach_and_play.py record teach.json --with-gripper
 ```
 
 启动后机械臂进入零力漂浮模式，可自由拖拽：
@@ -342,9 +332,6 @@ python examples/teach_and_play.py play teach.json --loop
 
 # 指定 CAN 口
 python examples/teach_and_play.py --can can1 play teach.json
-
-# 带 G1Z 夹爪回放
-python examples/teach_and_play.py play teach.json --with-gripper
 ```
 
 启动后机械臂先运动到轨迹起点，按 Enter 开始回放：
@@ -363,11 +350,8 @@ python examples/teach_and_play.py play teach.json --with-gripper
 ### 使用 a1zctl 服务端（可用于openclaw交互）
 
 ```bash
-# 终端 1：启动服务端（默认无夹爪；加 --with-gripper 启用夹爪）
+# 终端 1：按 config.yaml 启动服务端
 python tools/a1zctl serve
-
-# 终端 1（带夹爪）：
-python tools/a1zctl serve --with-gripper
 
 # 终端 2：发送控制指令
 python tools/a1zctl status              # 查看关节状态（含夹爪开度）
@@ -382,81 +366,6 @@ python tools/a1zctl stop               # 停止服务端
 服务仅接受本机连接：Linux/macOS 使用 `/tmp/a1z.sock` Unix socket；Windows
 使用 `tcp://127.0.0.1:43110` 回环 TCP，以兼容没有 `socket.AF_UNIX` 的 Python
 发行版。客户端会自动选择对应传输，无需额外参数或开放防火墙端口。
-
-## CAN 通信故障排查
-
-先根据失败阶段定位，不要把所有问题都归因于 Zadig 或内核驱动：
-
-| 失败阶段 | 优先检查 |
-|----------|----------|
-| macOS 报 `usb.core.NoBackendError` | 确认使用当前 SDK 的 `verify_can_mac.sh`，并重新安装 `.[gs_usb]`；SDK 会显式加载 `libusb-package` 内置 dylib，通常无需 Homebrew libusb |
-| 找不到 USB 设备 | 适配器供电、USB 线缆/接口、VID:PID；Windows 先检查设备管理器中的当前驱动，不兼容时再考虑 Zadig/WinUSB |
-| 无法打开 CAN 总线 | 适配器型号、gs_usb/SocketCAN 后端、波特率、设备是否被其他程序占用 |
-| 适配器可发送，但电机扫描无响应 | 机械臂上电、CANH/CANL 接线、120 Ω 终端电阻、1 Mbps 波特率、电机 ID/固件模式 |
-| 电机有反馈，但控制不稳定 | 回显帧过滤、控制频率、丢帧/延迟、错误码、供电和机械负载 |
-
-### 1. 先做不使能电机的环境和适配器检查
-
-```bash
-python --version
-python -m pip --version
-python -c "import pinocchio, can; print('Python environment OK')"
-python tools/motor_diag.py --check-can
-```
-
-Windows 可另行运行 `python tools\verify_can_win.py`。该脚本只验证适配器识别、打开和发送，不会验证电机反馈或控制稳定性。
-
-### 2. 检查硬件接线
-
-- CAN 盒（USB-CANFD 适配器）已插入电脑并牢固接触
-- CAN 总线两端接线正确、无松动
-- 机械臂电源已上电
-- CAN 盒的终端电阻正确安装（参见上文"配置 CAN 总线"）
-
-### 3. Linux：检查内核版本并修复
-
-仅当 Linux SocketCAN 路径在完成上述检查后仍无法通信时，再排查内核 `gs_usb` 兼容性。
-
-查看当前内核版本：
-
-```bash
-uname -r
-```
-
-- **方案 A**：升级 Linux 内核到 **6.8.0-124** 或更新版本（如果您有其他工作依赖当前内核，建议按照方案 B 操作）
-- **方案 B**：按官方文档给内核 / 驱动打补丁 —— 详见 [Galaxea 内核补丁指引](https://galaxea-ai.feishu.cn/docx/XF2ed4pmhoervNxODlfc11Gvnbb?from=from_copylink)
-
-### 4. Linux：手动确认是否为内核兼容问题（可选）
-
-如果不确定问题是否出在内核，或按上一步升级 / 打补丁后仍无法通信，可以手动向 J6 电机发送 CAN 指令来复现。
-
-打开两个终端：**终端 A** 用 `candump can0` 监听总线收发；**终端 B** 依次向 J6 电机发送使能 / 运动 / 失能指令，观察终端 A 是否有反馈帧、J6 是否实际转动。
-
-终端 A：
-
-```bash
-candump can0
-```
-
-终端 B：
-
-```bash
-# 1. 使能 J6
-cansend can0 006#FFFFFFFFFFFFFFFC
-
-# 2. 正向低速 0.5 rad/s
-cansend can0 006#8000844000199800
-
-# 3. 反向低速 -0.5 rad/s
-cansend can0 006#80007BB000199800
-
-# 4. 失能 J6
-cansend can0 006#FFFFFFFFFFFFFFFD
-```
-
-预期表现：使能命令下发后，J6 应有反馈帧回到 `candump`；正 / 反向运动命令下发后，J6 应实际低速转动。
-
-**判断依据**：如果使能命令完全没有反馈，关闭机械臂电源后重新上电 —— 若上电瞬间可以看到大约 **2 帧 CAN 数据**返回（电机上电反馈），但之后发送使能命令仍无回帧，基本可以确认是内核 / socketcan 兼容性问题，回到第 2 步执行方案 A 或 B。
 
 ## API 参考
 
@@ -524,7 +433,7 @@ converged, q_sol = kin.ik(target_pose, init_q=q0)
 # 检查 CAN 接口是否正常
 python tools/motor_diag.py --check-can
 
-# 扫描所有 6 个电机（加 --with-gripper 可扫描夹爪）
+# 扫描机械臂电机（with_gripper 为 true 时包含夹爪）
 python tools/motor_diag.py --scan
 
 # 详细探测某个关节（完整收发流程 + 反馈解析）
@@ -669,14 +578,14 @@ self._command.kd = self._default_kd.copy()  # [5.0, 5.0, 5.0, 2.0776, 1.5059, 1.
 
 ## 安全注意事项
 
+本 SDK 未通过功能安全认证。
+
 - 请将机械臂牢固安装在稳定基座上，清空其全部可达空间，并确保操作者可随时按下物理急停。
-- 首次使用请将 `gravity_comp_factor` 设为较小值（如 `0.3`），确认补偿方向正确后再逐步增大。
-- 带 G1Z 夹爪时必须使用 `a1z_g1z.yaml` 或 `--with-gripper`，否则动力学模型不包含夹爪质量。
+- 装有 G1Z 夹爪时，在 `config.yaml` 中设置 `with_gripper: true`，使动力学模型包含夹爪质量。
 - `--scan`、`--monitor`、`--probe`、示例脚本和 `a1zctl` 都可能使电机动作；不要在机械臂工作空间内停留。
 - 重力扭矩阈值、软限位和平滑停机只是软件保护，不能替代物理限位、防护围栏、急停回路或风险评估。
 - 通信中断、程序异常或行为不符合预期时，立即使用物理急停，然后确认所有电机已失能。
 - 不要将未经本地硬件验证的脚本用于无人值守、生产环境或与人直接协作的场景。
-- 首次使用请将 `gravity_comp_factor` 设为较小值（如 0.3），确认补偿方向正确后再逐步增大
 - SDK 由显式安全状态机管理急停与故障行为（见下文"安全状态机"与"故障策略"）
 - 反馈丢失 / 总线瞬态错误时自动重发缓存的安全保持帧并继续尝试恢复；持续 0.2 s 未恢复则锁存位置保持；过温 / 过速 / 电机错误直接失能电机
 - 所有目标关节角都会被裁剪到 URDF 限位范围内（见下文"关节限位处理"）
@@ -744,7 +653,7 @@ self._command.kd = self._default_kd.copy()  # [5.0, 5.0, 5.0, 2.0776, 1.5059, 1.
 
 ## 获取帮助与报告问题
 
-报告问题前，请先查阅 [CAN 通信故障排查](#can-通信故障排查) 并搜索现有 [GitHub Issues](https://github.com/userguide-galaxea/GALAXEA-A1Z/issues)。新 Issue 建议包含：
+报告问题前，请先查阅 [CAN 通信故障排查](docs/can-troubleshooting.md#can-通信故障排查) 并搜索现有 [GitHub Issues](https://github.com/userguide-galaxea/GALAXEA-A1Z/issues)。新 Issue 建议包含：
 
 - 操作系统及版本、Python 版本、仓库分支/提交号。
 - CAN 适配器型号和 VID:PID、后端类型、通道及波特率。
@@ -778,17 +687,12 @@ self._command.kd = self._default_kd.copy()  # [5.0, 5.0, 5.0, 2.0776, 1.5059, 1.
 # A1Z — 6-DOF Robotic Arm Python SDK (Optional G1Z Gripper)
 
 <p align="center">
-  <img src="docs/images/A1Z_G1Z.png" alt="A1Z robotic arm with G1Z gripper" width="500"/>
+  <img src="assets/A1Z_G1Z.png" alt="A1Z robotic arm with G1Z gripper" width="500"/>
 </p>
 
 An open-source Python SDK for A1Z six-axis robotic-arm research, algorithm validation, and application integration. It provides cross-platform CAN communication, motor control, Pinocchio-based dynamics and kinematics, gravity compensation, zero-force teaching, position hold, and optional G1Z gripper control.
 
 Repository: [github.com/userguide-galaxea/GALAXEA-A1Z](https://github.com/userguide-galaxea/GALAXEA-A1Z)
-
-Current cross-platform validation branch: `feat/cross-platform-g1z-fixes`
-
-> [!CAUTION]
-> This SDK directly enables and controls physical robot hardware. It is not a certified functional-safety system. Before running any active command for the first time, secure the arm, clear the workspace, keep the emergency stop within reach, and begin with a low gravity-compensation factor and low speed.
 
 ## Quick Navigation
 
@@ -796,27 +700,27 @@ Current cross-platform validation branch: `feat/cross-platform-g1z-fixes`
 - [Platform and Hardware Support](#platform-and-hardware-support)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [CAN Communication Troubleshooting](#can-communication-troubleshooting)
+- [CAN Communication Troubleshooting](docs/can-troubleshooting.md#can-communication-troubleshooting)
 - [API Reference](#api-reference)
 - [Safety](#safety)
 - [Development and Contributing](#development-and-contributing)
 
 ## Features
 
-- **Cross-platform CAN backends**: SocketCAN on Linux; an HHS `gs_usb` userspace backend on macOS/Windows; optional PEAK PCAN-USB support.
+- **Cross-platform CAN backends**: SocketCAN on Linux; `gs_usb` userspace support for the Galaxea USB2CANFD adapter on macOS/Windows; optional PEAK PCAN-USB support.
 - **Six-axis arm control**: mixed MotorA/MotorB chains, MIT position-velocity-torque control, and a default 250 Hz control loop.
 - **Dynamics and kinematics**: Pinocchio-based RNEA gravity compensation, forward kinematics, and inverse kinematics.
 - **Runnable examples**: gravity compensation, position hold, zero-force teach-and-playback, and gripper testing.
 - **Diagnostics and safe cleanup**: CAN checks, passive listening, motor scans, error-code decoding, and repeated disable on exit.
-- **Gripper-aware configuration**: `a1z_g1z.yaml` enables the G1Z gripper and selects the matching URDF mass model.
+- **Gripper-aware configuration**: Set `with_gripper: true` in `config.yaml` to enable the G1Z gripper and select the matching URDF mass model.
 
 ## Platform and Hardware Support
 
 | Platform | Default backend | Adapter/runtime | Notes |
 |----------|-----------------|-----------------|-------|
 | Linux | SocketCAN | SocketCAN-compatible CAN interface | Configure the interface at 1 Mbps; some kernels may require a `gs_usb` patch |
-| macOS | `gs_usb` | HHS USB-CANFD (`a8fa:8598`) | Userspace USB backend; the current version has passed 250 Hz hardware control validation |
-| Windows | `gs_usb` | HHS USB-CANFD (`a8fa:8598`) + libusb-compatible driver | Try the existing driver first; use Zadig/WinUSB only if the device cannot be opened |
+| macOS | `gs_usb` | Galaxea USB2CANFD adapter | Userspace USB backend; the current version has passed 250 Hz hardware control validation |
+| Windows | `gs_usb` | Galaxea USB2CANFD adapter + libusb-compatible driver | Try the existing driver first; use Zadig/WinUSB only if the device cannot be opened |
 | macOS / Windows | `pcan` | PEAK PCAN-USB + vendor runtime | Select explicitly with `--bustype pcan` |
 
 ### Validation Levels
@@ -831,8 +735,8 @@ Current hardware-validation status (2026-09):
 
 | Platform/configuration | Result |
 |------------------------|--------|
-| macOS + HHS `a8fa:8598` + asynchronous userspace backend | 250 Hz hardware control validated both without a gripper and with the G1Z gripper enabled |
-| Windows + HHS | 250 Hz hardware gravity-compensation control validated both without a gripper and with the G1Z gripper enabled |
+| macOS + Galaxea USB2CANFD + asynchronous userspace backend | 250 Hz hardware control validated both without a gripper and with the G1Z gripper enabled |
+| Windows + Galaxea USB2CANFD | 250 Hz hardware gravity-compensation control validated both without a gripper and with the G1Z gripper enabled |
 
 ## Project Structure
 
@@ -884,7 +788,7 @@ a1z/
 
 - Python >= 3.11 (the common supported baseline on all platforms)
 - **Linux**: SocketCAN (hardware CAN interface required)
-- **macOS / Windows**: Connects via the HHS USB-CANFD adapter (VID:PID `a8fa:8598`); the SDK automatically uses the gs_usb userspace backend
+- **macOS / Windows**: Connects via the Galaxea USB2CANFD adapter; the SDK automatically uses the gs_usb userspace backend
 - URDF model files (bundled, see `a1z/robot_models/a1z/`; defaults to `A1Z_Flange.urdf`, use `A1Z_G1Z.urdf` with `with_gripper=True`)
 
 > See the [Cross-Platform CAN Configuration](#cross-platform-can-configuration) section for details.
@@ -892,8 +796,8 @@ a1z/
 ### Install the SDK
 
 ```bash
-# Clone the current cross-platform validation branch
-git clone --branch feat/cross-platform-g1z-fixes --single-branch https://github.com/userguide-galaxea/GALAXEA-A1Z.git GALAXEA-A1Z
+# Clone the SDK
+git clone --branch main https://github.com/userguide-galaxea/galaxea_a1z.git GALAXEA-A1Z
 
 cd GALAXEA-A1Z
 
@@ -920,55 +824,66 @@ python -m pip install -e ".[gs_usb]"
 
 ### Configuration File (Optional)
 
-Two config files are provided in the repo root. Put default robot parameters there once and reuse them across examples and tools — every script that supports `--config` (examples, tools, a1zctl) reads it, and command-line flags override config-file values.
+Examples and tools that support `--config`, including `a1zctl serve`, read `config.yaml` from the repository root by default. Pass `--config PATH` to use another file. Explicit command-line flags override file settings.
 
-- `a1z.yaml`: default config, no gripper (`with_gripper: false`)
-- `a1z_g1z.yaml`: use when a G1Z gripper is attached (`with_gripper: true`, automatically switches to A1Z_G1Z.urdf)
+- `with_gripper: false` (default) selects the arm-only `A1Z_Flange.urdf`.
+- `with_gripper: true` enables the G1Z gripper and selects `A1Z_G1Z.urdf`.
 
 ```yaml
 can_channel: can0
 control_freq_hz: 250
 gravity_comp_factor: 1.0
-zero_gravity_mode: true
 with_gripper: false
 ```
 
-> The config file can also override `default_kp` / `default_kd` (factory defaults are hardware-tuned gains, see [Default Control Parameters](#default-control-parameters)). The CAN pacing gap (`inter_cmd_gap_us`) is a `get_a1z_robot()` constructor argument and is not set via the config file.
+| Setting | Description |
+|---|---|
+| `gripper_max_torque` | Maximum G1Z gripping torque in N·m. |
+| `urdf_path` | Uncomment and set a path to override the URDF selected by the gripper setting. |
+| `can_channel`, `bustype` | CAN interface and backend. Options include `socketcan`, `gs_usb`, `pcan`, and `slcan`. Auto selection uses `socketcan` on Linux and `gs_usb` on macOS and Windows. |
+| `motor_a_use_new_enable_protocol` | Set to `true` only if the MotorA firmware supports the `0x7FF` enable protocol. |
+| `control_freq_hz`, `min_freq_hz` | Control rate and low-frequency stop threshold in Hz. A sustained drop below the threshold triggers a protective stop. |
+| `gravity_comp_factor` | Gravity compensation scale. Use `0` for off and `1` for full compensation. |
+| `zero_gravity_mode` | `true` floats and `false` holds position. Omit to use the command's default mode. |
+| `default_kp`, `default_kd` | Position and velocity gains in J1–J6 order. Uncomment the corresponding line and edit its values to override the [SDK defaults](#default-control-parameters). |
+
+Set CAN pacing with `get_a1z_robot(inter_cmd_gap_us=...)`.
 
 Example usage:
 
+> [!CAUTION]
+> Before your first run, secure the arm, clear the workspace, and keep the physical emergency stop within reach.
+
 ```bash
-python examples/position_hold.py --config a1z.yaml
-python examples/position_hold.py --config a1z_g1z.yaml   # with gripper
-python tools/a1zctl serve --config a1z_g1z.yaml
-python tools/motor_diag.py --scan --config a1z.yaml
-python tools/set_zero.py --all --config a1z.yaml
+python examples/position_hold.py
+python tools/a1zctl serve
+python tools/motor_diag.py --scan
+python tools/set_zero.py --all
 ```
 
 ### Configure the CAN Bus (SocketCAN)
 
 > Note: verify that the CAN termination resistor is installed correctly!
 
-Using the HHS USB-CANFD adapter (VID/PID `a8fa:8598`):
+Using the Galaxea USB2CANFD adapter:
 
 ```bash
 # 1. Load the driver
 sudo modprobe gs_usb
 
-# 2. Bind the HHS adapter to gs_usb (ignore errors if already bound)
-sudo sh -c 'echo "a8fa 8598" > /sys/bus/usb/drivers/gs_usb/new_id' 2>/dev/null || true
-
-# 3. Confirm the interface appears (usually can0 for a single adapter)
+# 2. Confirm the interface appears (usually can0 for a single adapter)
 ip link show type can
 
-# 4. Configure and bring up (1 Mbps)
+# 3. Configure and bring up (1 Mbps)
 sudo ip link set can0 type can bitrate 1000000
 sudo ip link set can0 up
 ```
 
+If no CAN interface appears, see [Linux driver troubleshooting](docs/can-troubleshooting.md#3-linux-check-the-kernel-version-and-fix).
+
 #### macOS (gs_usb userspace mode)
 
-macOS has no SocketCAN. The SDK automatically detects the platform and uses the gs_usb userspace backend to connect to the HHS USB-CANFD adapter — **no manual CAN interface configuration is required**.
+macOS has no SocketCAN. The SDK automatically detects the platform and uses the gs_usb userspace backend to connect to the Galaxea USB2CANFD adapter — **no manual CAN interface configuration is required**.
 
 ```bash
 # 1. Install SDK + gs_usb extras (includes bundled libusb; usually no brew needed)
@@ -1007,8 +922,6 @@ python -c "import pinocchio, can, usb, usb1, gs_usb; print('Environment OK')"
 python tools\verify_can_win.py
 ```
 
-> ⚠️ Run `verify_can_win.py` without Zadig first. If it reports `Cannot find device 0` or a permission/driver error, confirm VID:PID `a8fa:8598` and then consider binding WinUSB with Zadig. Record the original driver first because changing it may affect vendor tools. A successful check proves only that the adapter opens and accepts a send call; it does not prove motor feedback or validated 250 Hz gravity compensation.
-
 #### Cross-Platform CAN Configuration
 
 The SDK automatically selects the CAN backend by platform:
@@ -1016,9 +929,9 @@ The SDK automatically selects the CAN backend by platform:
 | Platform | Adapter | Install | Usage |
 |----------|---------|---------|-------|
 | Linux | SocketCAN kernel driver | `python -m pip install -e .` | `--can can0` |
-| **macOS** | **HHS** (`a8fa:8598`) | `python -m pip install -e ".[gs_usb]"` | (default) `gs_usb` |
+| **macOS** | Galaxea USB2CANFD adapter | `python -m pip install -e ".[gs_usb]"` | (default) `gs_usb` |
 | **macOS** | **PEAK PCAN-USB** | `python -m pip install -e ".[pcan]"` + MacCAN PCBUSB runtime | `--bustype pcan --can PCAN_USBBUS1` |
-| **Windows** | **HHS** (`a8fa:8598`) | `python -m pip install -e ".[gs_usb]"`; use Zadig/WinUSB only for an incompatible driver | (default) `gs_usb` |
+| **Windows** | Galaxea USB2CANFD adapter | `python -m pip install -e ".[gs_usb]"`; use Zadig/WinUSB only for an incompatible driver | (default) `gs_usb` |
 | **Windows** | **PEAK PCAN-USB** | `python -m pip install -e ".[pcan]"` + PEAK official driver | `--bustype pcan --can PCAN_USBBUS1` |
 
 When `--bustype` is omitted, the OS default is used: Linux defaults to `socketcan`/`can0`; macOS/Windows default to `gs_usb`/device index `0`.
@@ -1040,34 +953,29 @@ robot = get_a1z_robot(inter_cmd_gap_us=0)        # disable pacing (legacy back-t
 
 ### Example Scripts
 
-> ⚠️ **With a G1Z gripper attached, add `--config a1z_g1z.yaml` to every command below** (or `--with-gripper` where supported). This is not just about controlling the gripper — the gravity-compensation dynamics model must include the gripper's mass; without it the compensation torque is too small and the arm will slowly droop.
+> With a G1Z gripper attached, set `with_gripper: true` in `config.yaml` so gravity compensation includes the gripper mass.
 
 ```bash
-# Zero-force float (default URDF A1Z_Flange.urdf; use --config a1z_g1z.yaml to switch to A1Z_G1Z.urdf automatically)
-
-# Start with a small compensation factor (recommended for first-time setup)
+# Start with a low gravity compensation factor on the first run
 python examples/gravity_comp.py --gravity_factor 0.3
 
 # Increase to full compensation once direction is confirmed correct
 python examples/gravity_comp.py --gravity_factor 1.0
 
-# With G1Z gripper: specify the gripper config (gravity comp includes gripper mass)
-python examples/gravity_comp.py --config a1z_g1z.yaml --gravity_factor 0.3
-
 # Position hold mode
 python examples/gravity_comp.py --mode hold
 
-# Position hold + move to target
+# Position hold + move slowly to target (with_gripper: false)
 python examples/position_hold.py --q_target_deg 0,30,-20,-15,0,0 --speed 0.5
 
-# Position hold + move to target (with gripper, 7-DOF)
-python examples/position_hold.py --with-gripper --q_target_deg 0,30,-20,-15,0,0,0.5 --speed 0.5
+# Position hold + move slowly to target (with_gripper: true, seventh value is gripper opening)
+python examples/position_hold.py --q_target_deg 0,30,-20,-15,0,0,0.5 --speed 0.5
 
 # Gripper test (free travel + torque saturation)
 python examples/gripper_hybrid_test.py --can can0
 ```
 
-> ⚠️ **If the commands above error out or the arm does not respond**, jump to [CAN Communication Troubleshooting](#can-communication-troubleshooting).
+> ⚠️ **If the commands above error out or the arm does not respond**, jump to [CAN Communication Troubleshooting](docs/can-troubleshooting.md#can-communication-troubleshooting).
 
 ### Zero-Force Teaching and Playback
 
@@ -1081,9 +989,6 @@ python examples/teach_and_play.py record teach.json
 
 # Specify CAN channel and sample rate
 python examples/teach_and_play.py --can can1 record teach.json --sample-hz 100
-
-# 带 G1Z 夹爪录制（7-DOF）
-python examples/teach_and_play.py record teach.json --with-gripper
 ```
 
 The arm enters zero-force float mode and can be freely backdriven:
@@ -1113,9 +1018,6 @@ python examples/teach_and_play.py play teach.json --loop
 
 # Specify CAN channel
 python examples/teach_and_play.py --can can1 play teach.json
-
-# 带 G1Z 夹爪回放
-python examples/teach_and_play.py play teach.json --with-gripper
 ```
 
 The arm moves to the trajectory start position first, then waits for Enter:
@@ -1134,11 +1036,8 @@ After playback (or Ctrl+C), the arm returns to zero and disables.
 ### Using the a1zctl Server
 
 ```bash
-# Terminal 1: start the server (default no gripper; add --with-gripper to enable it)
+# Terminal 1: start the server using config.yaml
 python tools/a1zctl serve
-
-# Terminal 1 (with gripper):
-python tools/a1zctl serve --with-gripper
 
 # Terminal 2: send control commands
 python tools/a1zctl status              # show joint state (including gripper)
@@ -1155,81 +1054,6 @@ The service accepts local connections only: Linux/macOS use the
 `tcp://127.0.0.1:43110` for compatibility with Python distributions that do
 not provide `socket.AF_UNIX`. The client selects the transport automatically;
 no extra argument or firewall port is required.
-
-## CAN Communication Troubleshooting
-
-Start by identifying the stage that fails. Do not attribute every failure to Zadig or a kernel driver:
-
-| Failure stage | Check first |
-|---------------|-------------|
-| macOS reports `usb.core.NoBackendError` | Use the current SDK's `verify_can_mac.sh` and reinstall `.[gs_usb]`; the SDK explicitly loads the dylib bundled by `libusb-package`, so Homebrew libusb is normally unnecessary |
-| USB device not found | Adapter power, USB cable/port, and VID:PID; on Windows, inspect the current Device Manager driver before considering Zadig/WinUSB |
-| CAN bus cannot be opened | Adapter model, gs_usb/SocketCAN backend, bitrate, and whether another process owns the device |
-| Adapter can send, but motor scan gets no response | Arm power, CANH/CANL wiring, 120 Ω termination, 1 Mbps bitrate, motor IDs, and firmware mode |
-| Motors reply, but control is unstable | Echo filtering, control frequency, loss/latency, error codes, power supply, and mechanical load |
-
-### 1. Run environment and adapter checks that do not enable motors
-
-```bash
-python --version
-python -m pip --version
-python -c "import pinocchio, can; print('Python environment OK')"
-python tools/motor_diag.py --check-can
-```
-
-On Windows, also run `python tools\verify_can_win.py`. It checks only adapter discovery, opening, and send submission; it does not verify motor feedback or control-loop stability.
-
-### 2. Check the wiring
-
-- The USB-CANFD adapter is plugged in and seated firmly
-- Both ends of the CAN bus are wired correctly and not loose
-- The arm is powered on
-- The CAN termination resistor is installed correctly (see "Configure the CAN Bus" above)
-
-### 3. Linux: check the kernel version and fix
-
-Investigate kernel `gs_usb` compatibility only when the Linux SocketCAN path still fails after the checks above.
-
-Check your current kernel version:
-
-```bash
-uname -r
-```
-
-- **Option A**: upgrade the Linux kernel to **6.8.0-124** or newer (if you have other work that depends on the current kernel, prefer Option B)
-- **Option B**: patch the kernel / driver as described in the [Galaxea kernel patch guide](https://galaxea-ai.feishu.cn/docx/XF2ed4pmhoervNxODlfc11Gvnbb?from=from_copylink)
-
-### 4. Linux: manually confirm the kernel compatibility issue (optional)
-
-If you are not sure the kernel is the culprit, or CAN still does not work after step 3, manually reproduce the issue by sending CAN commands to the J6 motor.
-
-Open two terminals. **Terminal A** monitors bus traffic with `candump can0`; **Terminal B** sends the enable / motion / disable commands to J6 in sequence. Watch Terminal A for feedback frames and check whether J6 actually rotates.
-
-Terminal A:
-
-```bash
-candump can0
-```
-
-Terminal B:
-
-```bash
-# 1. Enable J6
-cansend can0 006#FFFFFFFFFFFFFFFC
-
-# 2. Forward at 0.5 rad/s
-cansend can0 006#8000844000199800
-
-# 3. Reverse at -0.5 rad/s
-cansend can0 006#80007BB000199800
-
-# 4. Disable J6
-cansend can0 006#FFFFFFFFFFFFFFFD
-```
-
-Expected behavior: after the enable command, J6 should emit a feedback frame visible in `candump`; after forward / reverse, J6 should physically rotate at low speed.
-
-**Diagnosis**: if the enable command produces no feedback at all, power-cycle the arm — if you see roughly **2 CAN frames** returned during power-on (the motor's boot-up feedback) but the enable command still produces nothing, this confirms a kernel / SocketCAN compatibility issue. Go back to step 2 and apply Option A or B.
 
 ## API Reference
 
@@ -1297,7 +1121,7 @@ converged, q_sol = kin.ik(target_pose, init_q=q0)
 # Check CAN interface
 python tools/motor_diag.py --check-can
 
-# Scan all 6 motors (add --with-gripper to scan the gripper as joint 6)
+# Scan the arm motors (includes the gripper when with_gripper is true)
 python tools/motor_diag.py --scan
 
 # Detailed probe of a specific joint (full TX/RX flow + feedback parsing)
@@ -1420,14 +1244,14 @@ self._command.kd = self._default_kd.copy()  # [5.0, 5.0, 5.0, 2.0776, 1.5059, 1.
 
 ## Safety
 
+The SDK has no functional safety certification.
+
 - Mount the arm securely on a stable base, clear its entire reachable workspace, and keep a physical emergency stop within immediate reach.
-- For first use, set `gravity_comp_factor` to a small value such as `0.3`; confirm the compensation direction before increasing it.
-- When a G1Z gripper is attached, use `a1z_g1z.yaml` or `--with-gripper` so the dynamics model includes the gripper mass.
+- When a G1Z gripper is attached, set `with_gripper: true` in `config.yaml` so the dynamics model includes the gripper mass.
 - `--scan`, `--monitor`, `--probe`, the example scripts, and `a1zctl` may move motors. Keep people outside the arm's workspace while they run.
 - Gravity-torque thresholds, software joint limits, and smooth shutdown are software safeguards; they do not replace physical limits, guarding, an emergency-stop circuit, or a risk assessment.
 - If communication stops, the process fails, or motion is unexpected, use the physical emergency stop immediately and then confirm that all motors are disabled.
 - Do not use unvalidated scripts for unattended operation, production machinery, or direct human collaboration.
-- For first use, set `gravity_comp_factor` to a small value (e.g. 0.3) and confirm compensation direction before increasing
 - Estop and fault behavior is managed by an explicit safety state machine (see "Safety State Machine" and "Fault Policy" below)
 - On feedback loss / transient bus errors the SDK resends the cached safe-hold frame and keeps trying to recover; if the fault persists for 0.2 s it latches a position hold; over-temperature / over-speed / motor errors disable the motors immediately
 - All target joint angles are clipped to the URDF joint limits (see "Joint Limit Handling" below)
@@ -1495,7 +1319,7 @@ Before opening a pull request, confirm that:
 
 ## Getting Help and Reporting Issues
 
-Before reporting a problem, review [CAN Communication Troubleshooting](#can-communication-troubleshooting) and search existing [GitHub Issues](https://github.com/userguide-galaxea/GALAXEA-A1Z/issues). A useful new issue includes:
+Before reporting a problem, review [CAN Communication Troubleshooting](docs/can-troubleshooting.md#can-communication-troubleshooting) and search existing [GitHub Issues](https://github.com/userguide-galaxea/GALAXEA-A1Z/issues). A useful new issue includes:
 
 - Operating system and version, Python version, and repository branch/commit.
 - CAN adapter model and VID:PID, backend, channel, and bitrate.

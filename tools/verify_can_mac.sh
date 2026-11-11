@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# macOS CAN 通信验证脚本（HHS USB-CANFD 适配器，gs_usb 用户态后端）
+# macOS CAN 通信验证脚本（Galaxea USB2CANFD 适配器，gs_usb 用户态后端）
 #
 # 1. 检查 libusb 运行时
 # 2. 列出已识别的 CAN 适配器
@@ -49,7 +49,7 @@ except ImportError:
 HHS_VID, HHS_PID = 0xA8FA, 0x8598
 devs = list(usb_find(find_all=True, idVendor=HHS_VID, idProduct=HHS_PID))
 if not devs:
-    print("  [FAIL] 未找到 HHS 适配器 (a8fa:8598)。检查 USB 连接。")
+    print("  [FAIL] 未找到 Galaxea USB2CANFD 适配器。检查 USB 连接。")
     raise SystemExit(1)
 for i, d in enumerate(devs):
     print(f"  [OK] 设备 {i}: VID:PID {d.idVendor:04x}:{d.idProduct:04x} bus={d.bus} addr={d.address}")

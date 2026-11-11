@@ -188,9 +188,10 @@ Examples:
 
     # serve
     sp = sub.add_parser("serve", help="Start the robot server (blocking)")
-    sp.add_argument("--can", default="can0", help="SocketCAN channel (default: can0)")
-    sp.add_argument("--with-gripper", action="store_true", help="Enable gripper motor")
-    sp.add_argument("--gravity-mode", action="store_true",
+    sp.add_argument("--can", help="CAN channel override (fallback: can0)")
+    sp.add_argument("--with-gripper", action="store_true", default=None,
+                    help="Enable the gripper regardless of the YAML setting")
+    sp.add_argument("--gravity-mode", action="store_true", default=None,
                     help="Zero-gravity float mode (default: position hold)")
     add_config_argument(sp)
 

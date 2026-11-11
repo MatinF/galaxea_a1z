@@ -60,8 +60,8 @@ joint's whole limit sweep, e.g.::
     {"joint1": [0.0, 1.2, -1.1, 0.0, 0.4, 0.0], "joint2": [...], ...}
 
 Usage:
-    python tools/limit_crossing_check.py --config a1z_g1z.yaml --tag M3
-    python tools/limit_crossing_check.py --config a1z_g1z.yaml --joints 2 --calibrate
+    python tools/limit_crossing_check.py --tag M3
+    python tools/limit_crossing_check.py --joints 2 --calibrate
 """
 
 import argparse

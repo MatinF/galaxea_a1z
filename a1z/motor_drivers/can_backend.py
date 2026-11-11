@@ -4,8 +4,8 @@ Automatically selects the appropriate CAN backend based on the operating
 system:
 
 - **Linux**: native SocketCAN (kernel driver).
-- **macOS / Windows**: gs_usb userspace backend via the HHS USB-CANFD
-  adapter (VID:PID ``a8fa:8598``), with required patches and TX-echo
+- **macOS / Windows**: gs_usb userspace backend via the Galaxea USB2CANFD
+  adapter, with required patches and TX-echo
   filtering.
 
 Usage::
@@ -28,12 +28,12 @@ import can
 
 logger = logging.getLogger(__name__)
 
-# HHS USB-CANFD adapter USB identifiers
+# Galaxea USB2CANFD adapter USB identifiers
 _HHS_VID = 0xA8FA
 _HHS_PID = 0x8598
 
 # Linux 6.8 gs_usb auto-selected values reported by
-# ``ip -details link show can0`` for this exact 80 MHz HHS adapter at 1 Mbps.
+# ``ip -details link show can0`` for this exact 80 MHz Galaxea USB2CANFD adapter at 1 Mbps.
 # Keeping the userspace backend bit-for-bit aligned avoids comparing two
 # materially different CAN sampling configurations.
 _HHS_1M_LINUX_TIMING = {
@@ -74,7 +74,7 @@ def _load_usb1_runtime(usb1_module) -> None:
 
 
 def _send_hhs_ep01(self, frame) -> bool:
-    """Send through HHS endpoint 0x01 using the negotiated frame format.
+    """Send through Galaxea USB2CANFD endpoint 0x01 using the negotiated frame format.
 
     This mirrors ``GsUsb.send`` except for the endpoint. The frame size must
     follow the hardware-timestamp mode selected by ``GsUsb.start()``.
@@ -87,14 +87,14 @@ def _send_hhs_ep01(self, frame) -> bool:
 
 
 def _ensure_hhs_recognized() -> None:
-    """Apply one-time patches required for the HHS adapter (gs_usb userspace).
+    """Apply one-time patches required for the Galaxea USB2CANFD adapter (gs_usb userspace).
 
-    1. Whitelist the HHS VID/PID in ``GsUsb.is_gs_usb_device`` (the gs_usb
+    1. Whitelist the Galaxea USB2CANFD VID/PID in ``GsUsb.is_gs_usb_device`` (the gs_usb
        library only recognises known candleLight-style IDs by default).
     2. On macOS/Windows there is no detachable kernel driver, so
        ``usb.core.Device.is_kernel_driver_active`` is forced to ``False``
        to avoid an Access-denied / NotImplemented error.
-    3. The HHS adapter's OUT endpoint is ``0x01`` (gs_usb defaults to
+    3. The Galaxea USB2CANFD adapter's OUT endpoint is ``0x01`` (gs_usb defaults to
        ``0x02``); override ``GsUsb.send`` accordingly.
     """
     global _patched
@@ -118,7 +118,7 @@ def _ensure_hhs_recognized() -> None:
     except ImportError:
         pass
 
-    # 1. Whitelist HHS VID/PID
+    # 1. Whitelist Galaxea USB2CANFD VID/PID
     _orig = GsUsb.is_gs_usb_device
     GsUsb.is_gs_usb_device = staticmethod(
         lambda dev: _orig(dev) or (dev.idVendor == _HHS_VID and dev.idProduct == _HHS_PID)
@@ -128,14 +128,14 @@ def _ensure_hhs_recognized() -> None:
     if not _IS_LINUX:
         usb.core.Device.is_kernel_driver_active = lambda self, intf: False
 
-    # 3. HHS adapter OUT endpoint is 0x01, not gs_usb's default 0x02.
+    # 3. Galaxea USB2CANFD adapter OUT endpoint is 0x01, not gs_usb's default 0x02.
     # Preserve the upstream hardware-timestamp frame-size selection.
     GsUsb.send = _send_hhs_ep01
 
-    # 4. Keep the HHS adapter in the same classic-CAN mode used by the Linux
+    # 4. Keep the Galaxea USB2CANFD adapter in the same classic-CAN mode used by the Linux
     # SocketCAN path. gs_usb enables hardware timestamps by default, changing
     # the USB host-frame format from 20 to 24 bytes. Timestamps are not used by
-    # this SDK, and the HHS firmware behaves differently under that mode.
+    # this SDK, and the Galaxea USB2CANFD firmware behaves differently under that mode.
     original_start = GsUsb.start
 
     def start_without_hhs_hw_timestamp(self, flags=None):
@@ -158,7 +158,7 @@ def _ensure_hhs_recognized() -> None:
 
     _patched = True
     logger.debug(
-        "gs_usb patches applied (HHS VID/PID whitelist, kernel-driver bypass, "
+        "gs_usb patches applied (Galaxea USB2CANFD VID/PID whitelist, kernel-driver bypass, "
         "EP 0x01, hardware timestamps disabled)"
     )
 
@@ -553,7 +553,7 @@ class BufferedReceiveBus(can.BusABC):
 
 
 class AsyncHhsBus(can.BusABC):
-    """Experimental HHS backend using concurrent libusb TX/RX transfers.
+    """Experimental Galaxea USB2CANFD backend using concurrent libusb TX/RX transfers.
 
     The Linux gs_usb kernel driver keeps up to ten TX URBs in flight. The
     python-can gs_usb backend instead performs one synchronous USB write per
@@ -561,7 +561,7 @@ class AsyncHhsBus(can.BusABC):
     its own echo ID and USB transfer, while a pool of IN transfers continuously
     receives motor feedback and TX completion echoes.
 
-    This is the default HHS backend on macOS and Windows. macOS passed
+    This is the default Galaxea USB2CANFD backend on macOS and Windows. macOS passed
     empty-bus, low-torque, full-gravity and 300-second stability validation;
     on Windows the CAN link and 6/6 motor scan have been verified on
     hardware. Set ``A1Z_GS_USB_ASYNC_TX=0`` to fall back to python-can's
@@ -583,7 +583,7 @@ class AsyncHhsBus(can.BusABC):
 
         if bitrate != 1_000_000:
             raise can.CanInitializationError(
-                "AsyncHhsBus only supports 1 Mbps on the HHS adapter "
+                "AsyncHhsBus only supports 1 Mbps on the Galaxea USB2CANFD adapter "
                 f"(requested {bitrate})"
             )
 
@@ -594,7 +594,7 @@ class AsyncHhsBus(can.BusABC):
         self._can_err_flag = CAN_ERR_FLAG
         self._context = usb1.USBContext()
 
-        # Enumerate HHS adapters directly through libusb1. On Windows this
+        # Enumerate Galaxea USB2CANFD adapters directly through libusb1. On Windows this
         # avoids the PyUSB -> libusb1 "handover" (open via PyUSB, dispose, then
         # re-open via libusb1) that failed on hardware: disposing the PyUSB
         # handle can tear down the device on the WinUSB stack so the later
@@ -614,8 +614,8 @@ class AsyncHhsBus(can.BusABC):
         if index < 0 or index >= len(candidates):
             self._context.close()
             raise can.CanInitializationError(
-                f"Cannot find HHS gs_usb device {index}. "
-                f"HHS adapters found: {len(candidates)}"
+                f"Cannot find Galaxea USB2CANFD gs_usb device {index}. "
+                f"Galaxea USB2CANFD adapters found: {len(candidates)}"
             )
 
         self._handle = candidates[index].open()
@@ -637,7 +637,7 @@ class AsyncHhsBus(can.BusABC):
             raise
 
         logger.info(
-            "HHS CAN setup: clock=%dHz bitrate=%d sample_point=%.2f%% "
+            "Galaxea USB2CANFD CAN setup: clock=%dHz bitrate=%d sample_point=%.2f%% "
             "brp=%d prop_seg=%d phase_seg1=%d phase_seg2=%d sjw=%d "
             "mode=normal frame_size=%d",
             80_000_000,
@@ -688,7 +688,7 @@ class AsyncHhsBus(can.BusABC):
             raise
 
     def _setup_gs_usb(self) -> None:
-        """Configure the HHS CAN controller through libusb1 control transfers.
+        """Configure the Galaxea USB2CANFD CAN controller through libusb1 control transfers.
 
         Mirrors the Linux gs_usb kernel handshake (matching kernel/drivers/
         net/can/usb/gs_usb.c):
@@ -710,7 +710,7 @@ class AsyncHhsBus(can.BusABC):
             struct.pack("<I", 0x0000BEEF),
             timeout=100,
         )
-        # 2) Linux-aligned 1 Mbps bit timing (80 MHz HHS controller)
+        # 2) Linux-aligned 1 Mbps bit timing (80 MHz Galaxea USB2CANFD controller)
         timing = _HHS_1M_LINUX_TIMING
         self._handle.controlWrite(
             request_type_out,
@@ -755,7 +755,7 @@ class AsyncHhsBus(can.BusABC):
             except Exception as exc:
                 if not self._stop_event.is_set():
                     self._fatal_error = exc
-                    logger.exception("Async HHS USB event loop failed")
+                    logger.exception("Async Galaxea USB2CANFD USB event loop failed")
                 break
 
     def _on_tx_complete(self, transfer) -> None:
@@ -763,7 +763,7 @@ class AsyncHhsBus(can.BusABC):
         if status != self._usb1.TRANSFER_COMPLETED and not self._stop_event.is_set():
             slot = transfer.getUserData()
             self._fatal_error = can.CanOperationError(
-                f"Async HHS TX transfer failed with libusb status {status}"
+                f"Async Galaxea USB2CANFD TX transfer failed with libusb status {status}"
             )
             self._release_tx_slot(slot)
 
@@ -785,7 +785,7 @@ class AsyncHhsBus(can.BusABC):
                 self._process_usb_frame(payload)
             elif actual_length and not self._stop_event.is_set():
                 logger.warning(
-                    "Ignoring HHS USB frame with unexpected length %d",
+                    "Ignoring Galaxea USB2CANFD USB frame with unexpected length %d",
                     actual_length,
                 )
         elif status not in (
@@ -793,7 +793,7 @@ class AsyncHhsBus(can.BusABC):
             self._usb1.TRANSFER_NO_DEVICE,
         ) and not self._stop_event.is_set():
             self._fatal_error = can.CanOperationError(
-                f"Async HHS RX transfer failed with libusb status {status}"
+                f"Async Galaxea USB2CANFD RX transfer failed with libusb status {status}"
             )
 
         if not self._stop_event.is_set() and self._fatal_error is None:
@@ -836,14 +836,14 @@ class AsyncHhsBus(can.BusABC):
 
         if self._fatal_error is not None:
             raise can.CanOperationError(
-                f"Async HHS backend is unhealthy: {self._fatal_error}"
+                f"Async Galaxea USB2CANFD backend is unhealthy: {self._fatal_error}"
             )
         wait_timeout = 0.02 if timeout is None else timeout
         try:
             slot = self._tx_slots.get(timeout=wait_timeout)
         except queue.Empty as exc:
             raise can.CanOperationError(
-                "Async HHS TX queue exhausted while waiting for echo"
+                "Async Galaxea USB2CANFD TX queue exhausted while waiting for echo"
             ) from exc
 
         can_id = msg.arbitration_id
@@ -876,7 +876,7 @@ class AsyncHhsBus(can.BusABC):
     def _recv_internal(self, timeout):
         if self._fatal_error is not None:
             raise can.CanOperationError(
-                f"Async HHS backend is unhealthy: {self._fatal_error}"
+                f"Async Galaxea USB2CANFD backend is unhealthy: {self._fatal_error}"
             )
         try:
             if timeout is None:
@@ -936,7 +936,7 @@ class AsyncHhsBus(can.BusABC):
         while True:
             if self._fatal_error is not None:
                 raise can.CanOperationError(
-                    f"Cannot flush unhealthy Async HHS backend: "
+                    f"Cannot flush unhealthy Async Galaxea USB2CANFD backend: "
                     f"{self._fatal_error}"
                 )
             with self._transfer_lock:
@@ -945,7 +945,7 @@ class AsyncHhsBus(can.BusABC):
                 return True
             if time.monotonic() >= deadline:
                 logger.error(
-                    "Timed out waiting for %d HHS TX frame(s) to complete",
+                    "Timed out waiting for %d Galaxea USB2CANFD TX frame(s) to complete",
                     pending,
                 )
                 return False
@@ -967,7 +967,7 @@ def default_channel() -> Union[str, int]:
 
 
 def _selected_gs_usb_is_hhs(channel: Union[str, int]) -> bool:
-    """Return whether the selected gs_usb device is the validated HHS model.
+    """Return whether the selected gs_usb device is the validated Galaxea USB2CANFD model.
 
     Use libusb1 directly so selecting the async backend does not first depend
     on PyUSB discovering a separate libusb backend.
@@ -1040,8 +1040,8 @@ def open_can_bus(
                 channel = int(channel[3:])
 
     async_setting = os.environ.get("A1Z_GS_USB_ASYNC_TX")
-    # macOS and Windows both default to the async HHS backend when the
-    # selected gs_usb device is the validated HHS adapter. This avoids the
+    # macOS and Windows both default to the async Galaxea USB2CANFD backend when the
+    # selected gs_usb device is the validated Galaxea USB2CANFD adapter. This avoids the
     # per-frame synchronous USB round trip that starves the 250 Hz control
     # loop (macOS has passed empty-bus, low-torque, full-gravity and
     # 300-second stability validation; Windows CAN link and 6/6 motor scan
@@ -1056,7 +1056,7 @@ def open_can_bus(
     )
     if async_hhs:
         bus = AsyncHhsBus(channel=channel, bitrate=bitrate)
-        logger.info("Async HHS gs_usb backend enabled")
+        logger.info("Async Galaxea USB2CANFD gs_usb backend enabled")
     else:
         bus = can.interface.Bus(interface=bustype, channel=channel, bitrate=bitrate)
 
@@ -1075,7 +1075,7 @@ def open_can_bus(
         logger.info("gs_usb continuous receive thread enabled")
 
     if bustype == "gs_usb":
-        desc = f"gs_usb idx={channel} (HHS a8fa:8598) @ {bitrate} bps"
+        desc = f"gs_usb idx={channel} (Galaxea USB2CANFD) @ {bitrate} bps"
     else:
         desc = f"{bustype}/{channel} @ {bitrate} bps"
     logger.info(f"Opening CAN bus: {desc}")

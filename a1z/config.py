@@ -3,7 +3,7 @@
 A central YAML config lets you set default robot parameters (CAN channel,
 URDF, gripper, gains, ...) once and share them across examples and tools.
 
-Example ``a1z.yaml`` (or ``a1z_g1z.yaml`` with ``with_gripper: true``)::
+Example ``config.yaml`` (set ``with_gripper: true`` when G1Z is attached)::
 
     can_channel: can0
     control_freq_hz: 250
@@ -19,7 +19,7 @@ Usage in a script::
 
     from a1z.config import load_config, config_to_robot_kwargs
 
-    config = load_config(args.config) if args.config else {}
+    config = load_config(args.config)
     kwargs = config_to_robot_kwargs(config)
     kwargs.setdefault("can_channel", args.can)
     robot = get_a1z_robot(**kwargs)
@@ -27,11 +27,15 @@ Usage in a script::
 Command-line arguments override config-file values.
 """
 
+import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import numpy as np
 import yaml
+
+
+_DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"
 
 
 # Mapping from config-file key -> get_a1z_robot keyword argument.
@@ -52,11 +56,12 @@ _ROBOT_KWARGS = {
 }
 
 
-def load_config(path: str) -> Dict[str, Any]:
+def load_config(path: Optional[str] = None) -> Dict[str, Any]:
     """Load a YAML config file.
 
     Args:
-        path: Path to the YAML file.
+        path: YAML file path. If omitted, use the repository's config.yaml
+            when present, or return an empty dict.
 
     Returns:
         Dict of config values. Returns an empty dict if the file is empty.
@@ -65,6 +70,10 @@ def load_config(path: str) -> Dict[str, Any]:
         FileNotFoundError: If the file does not exist.
         yaml.YAMLError: If the file cannot be parsed.
     """
+    if path is None:
+        if not _DEFAULT_CONFIG_PATH.is_file():
+            return {}
+        path = str(_DEFAULT_CONFIG_PATH)
     with open(path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return data if isinstance(data, dict) else {}
@@ -92,10 +101,18 @@ def add_config_argument(parser, default: Optional[str] = None) -> None:
 
     Args:
         parser: ``argparse.ArgumentParser`` or sub-parser.
-        default: Optional default config file path.
+        default: Optional override for the repository's config.yaml path.
     """
+    if default is None:
+        # A checkout's scripts can also use a non-editable SDK installation.
+        script_dir = Path(sys.argv[0]).resolve().parent
+        checkout_config = script_dir.parent / "config.yaml"
+        if script_dir.name in {"examples", "tools"} and checkout_config.is_file():
+            default = str(checkout_config)
+        elif _DEFAULT_CONFIG_PATH.is_file():
+            default = str(_DEFAULT_CONFIG_PATH)
     parser.add_argument(
         "--config",
         default=default,
-        help="Path to a YAML config file (values can be overridden by CLI flags).",
+        help="Path to a YAML config file (default: repository config.yaml).",
     )

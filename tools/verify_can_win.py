@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Windows CAN 通信验证脚本（HHS USB-CANFD 适配器，gs_usb 用户态后端）。
+"""Windows CAN 通信验证脚本（Galaxea USB2CANFD 适配器，gs_usb 用户态后端）。
 
 1. 检查 gs_usb Python 运行时（python-can / PyUSB / gs_usb）
 2. 列出已识别的 CAN 适配器
@@ -42,7 +42,7 @@ def step2_scan_adapters() -> None:
         sys.exit(1)
 
     if not devs:
-        print("  [FAIL] 未找到 HHS 适配器 (a8fa:8598)")
+        print("  [FAIL] 未找到 Galaxea USB2CANFD 适配器")
         print("         1. 检查适配器供电、USB 线缆和接口")
         print("         2. 在设备管理器/Zadig 中确认 VID:PID 为 a8fa:8598")
         print("         3. 确认已用 Zadig 将该设备绑定到 WinUSB")

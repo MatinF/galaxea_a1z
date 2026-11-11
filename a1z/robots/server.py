@@ -166,7 +166,7 @@ class RobotServer:
 
     def _cmd_gripper(self, args: dict) -> dict:
         if not self._with_gripper:
-            return {"ok": False, "error": "Server was started without --with-gripper"}
+            return {"ok": False, "error": "Gripper disabled. Set with_gripper: true in config.yaml and restart the server."}
         value = float(args.get("value", 1.0))
         if not 0.0 <= value <= 1.0:
             return {"ok": False, "error": "value must be in [0.0, 1.0]"}
@@ -318,27 +318,27 @@ class RobotServer:
 # ------------------------------------------------------------------
 
 def serve(
-    can_channel: str = "can0",
-    with_gripper: bool = False,
-    gravity_mode: bool = False,
+    can_channel: str | None = None,
+    with_gripper: bool | None = None,
+    gravity_mode: bool | None = None,
     config_path: str | None = None,
 ) -> None:
     """Start the robot server in the foreground."""
-    config = load_config(config_path) if config_path else {}
-    kwargs = config_to_robot_kwargs(config)
-    kwargs.setdefault("can_channel", can_channel)
-    kwargs.setdefault("with_gripper", with_gripper)
-    kwargs.setdefault("zero_gravity_mode", gravity_mode)
-    kwargs.setdefault("gravity_comp_factor", 1.0)
-    # CLI flags override config file values.
-    kwargs["can_channel"] = can_channel
-    kwargs["with_gripper"] = with_gripper
-    kwargs["zero_gravity_mode"] = gravity_mode
+    kwargs = config_to_robot_kwargs(load_config(config_path))
+    if can_channel is not None:
+        kwargs["can_channel"] = can_channel
+    if with_gripper is not None:
+        kwargs["with_gripper"] = with_gripper
+    if gravity_mode is not None:
+        kwargs["zero_gravity_mode"] = gravity_mode
+    kwargs.setdefault("can_channel", "can0")
+    kwargs.setdefault("with_gripper", False)
+    kwargs.setdefault("zero_gravity_mode", False)
 
     print(f"[a1z] Initialising arm  can={kwargs['can_channel']}  gripper={'yes' if kwargs['with_gripper'] else 'no'}")
     robot = get_a1z_robot(**kwargs)
 
-    server = RobotServer(robot, with_gripper=with_gripper)
+    server = RobotServer(robot, with_gripper=kwargs["with_gripper"])
 
     def _sigint(sig, frame):
         print("\n[a1z] Interrupted — stopping...")

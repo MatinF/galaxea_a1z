@@ -1,0 +1,19 @@
+# Hardware
+with_gripper: false
+gripper_max_torque: 2.0
+# urdf_path: a1z/robot_models/a1z/A1Z_Flange.urdf
+
+# CAN bus
+can_channel: can0
+# bustype: null
+# motor_a_use_new_enable_protocol: false
+
+# Control
+control_freq_hz: 250
+# min_freq_hz: 80.0
+gravity_comp_factor: 1.0
+# zero_gravity_mode: true
+
+# PD gain overrides
+# default_kp: [146.8988, 62.9454, 89.2416, 120.0, 40.0, 100.0]
+# default_kd: [5.0, 5.0, 5.0, 2.0776, 1.5059, 1.2553]

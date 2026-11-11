@@ -47,9 +47,11 @@ OpenClaw skill descriptor. After OpenClaw loads this file the AI assistant can c
 
 ## Usage
 
+Set `with_gripper: true` in the repository's `config.yaml` if the G1Z is attached.
+
 ```bash
 # Terminal 1 — keep running
-python tools/a1zctl serve --with-gripper
+python tools/a1zctl serve
 
 # Terminal 2 or OpenClaw
 python tools/a1zctl status

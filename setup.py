@@ -20,7 +20,7 @@ setuptools.setup(
         "pyyaml",
     ],
     extras_require={
-        # gs_usb userspace backend (macOS/Windows with HHS adapter)
+        # gs_usb userspace backend (macOS/Windows with Galaxea USB2CANFD adapter)
         # libusb-package bundles the libusb binary (no brew/zadig libusb needed)
         "gs_usb": [
             "python-can[gs_usb]",

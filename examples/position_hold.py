@@ -133,7 +133,7 @@ def main():
             pos_deg = np.degrees(state["pos"])
             eff = state["eff"]
             extra = ""
-            if args.with_gripper:
+            if with_gripper:
                 grip = robot.get_gripper_pos()
                 extra = f"  grip: {grip:.2f}"
             print(
