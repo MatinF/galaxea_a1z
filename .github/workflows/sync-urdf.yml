@@ -17,10 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the SDK
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check out the upstream A1Z descriptions
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: userguide-galaxea/robot_descriptions
           ref: galaxea/main
@@ -55,7 +55,7 @@ jobs:
 
       - name: Set up Python
         if: steps.models.outputs.changed == 'true'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 

@@ -20,6 +20,7 @@ A1Z 六轴机械臂的开源 Python SDK，面向机器人研发、算法验证�
 - [快速开始](#快速开始)
 - [CAN 通信故障排查](docs/can-troubleshooting.md#can-通信故障排查)
 - [SDK 使用指南](docs/sdk-guide.md#zh)
+- [更新日志](CHANGELOG.md#中文)
 - [安全注意事项](#安全注意事项)
 - [开发与贡献](#开发与贡献)
 
@@ -502,6 +503,7 @@ Repository: [github.com/userguide-galaxea/GALAXEA-A1Z](https://github.com/usergu
 - [Quick Start](#quick-start)
 - [CAN Communication Troubleshooting](docs/can-troubleshooting.md#can-communication-troubleshooting)
 - [SDK Guide](docs/sdk-guide.md#en)
+- [Changelog](CHANGELOG.md#english)
 - [Safety](#safety)
 - [Development and Contributing](#development-and-contributing)
 
