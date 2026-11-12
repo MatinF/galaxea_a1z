@@ -37,7 +37,7 @@ from pathlib import Path
 
 import numpy as np
 
-from a1z.config import add_config_argument, config_to_robot_kwargs, load_config
+from a1z.config import config_to_robot_kwargs, load_config
 from a1z.robots.get_robot import get_a1z_robot
 
 _SAMPLE_HZ = 2.0  # telemetry sampling during the hold phase
@@ -140,7 +140,6 @@ def main() -> int:
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    add_config_argument(parser)
     parser.add_argument("--can", default=None, help="CAN channel override.")
     parser.add_argument("--bustype", default=None, help="CAN backend override.")
     parser.add_argument("--rounds", type=int, default=5,
@@ -161,7 +160,7 @@ def main() -> int:
     )
     logger = _setup_logger(log_dir)
 
-    config = load_config(args.config) if args.config else {}
+    config = load_config()
     kwargs = config_to_robot_kwargs(config)
     if args.can is not None:
         kwargs["can_channel"] = args.can
@@ -170,8 +169,8 @@ def main() -> int:
     kwargs.setdefault("zero_gravity_mode", False)  # same default as position_hold
 
     logger.info("log dir: %s", log_dir)
-    logger.info("config=%s can=%s bustype=%s gripper=%s zero_gravity_mode=%s freq=%sHz",
-                args.config, kwargs.get("can_channel", "can0"),
+    logger.info("can=%s bustype=%s gripper=%s zero_gravity_mode=%s freq=%sHz",
+                kwargs.get("can_channel", "can0"),
                 kwargs.get("bustype", "auto"), kwargs.get("with_gripper", False),
                 kwargs.get("zero_gravity_mode"), kwargs.get("control_freq_hz", 250))
     logger.info("rounds=%d hold=%.1fs", args.rounds, args.hold_s)

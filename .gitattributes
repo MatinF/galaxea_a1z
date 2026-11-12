@@ -1,0 +1,2 @@
+# Keep synchronized URDF bytes unchanged, including upstream line endings.
+/a1z/robot_models/a1z/*.urdf -text whitespace=cr-at-eol

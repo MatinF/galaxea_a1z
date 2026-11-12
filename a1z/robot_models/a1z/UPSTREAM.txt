@@ -1,0 +1,4 @@
+Repository: https://github.com/userguide-galaxea/robot_descriptions
+Revision: 72008ea950a4c9258387d30821a7d8d8a2b588ca
+Flange: a1z_description/a1z_flange_description/urdf/A1Z_Flange.urdf
+G1Z: a1z_description/a1z_g1z_description/urdf/A1Z_G1Z.urdf

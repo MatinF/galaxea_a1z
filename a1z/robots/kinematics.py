@@ -12,6 +12,8 @@ except ImportError:
         "conda install -c conda-forge pinocchio; on Linux/macOS use: pip install pin"
     )
 
+from a1z.dynamics.urdf_model import build_arm_model
+
 
 class Kinematics:
     """FK/IK using Pinocchio.
@@ -20,15 +22,18 @@ class Kinematics:
     solver based on the Pinocchio framework.
     """
 
-    def __init__(self, urdf_path: str, end_effector_frame: Optional[str] = None):
+    def __init__(self, urdf_path: str, end_effector_frame: Optional[str] = None, *,
+                 lock_gripper_joints: bool = True):
         """Initialize kinematics from URDF.
 
         Args:
             urdf_path: Path to the URDF file.
             end_effector_frame: Name of the end-effector frame for FK/IK.
                                 If None, the last frame in the model is used.
+            lock_gripper_joints: Lock the A1Z gripper fingers at their URDF
+                                 zero positions for six-axis kinematics.
         """
-        self._model = pinocchio.buildModelFromUrdf(urdf_path)
+        self._model = build_arm_model(urdf_path, lock_gripper_joints)
         self._data = self._model.createData()
         self._end_effector_frame = end_effector_frame
         self._q_lower = self._model.lowerPositionLimit.copy()

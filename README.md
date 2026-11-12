@@ -102,7 +102,7 @@ a1z/
 - Python >= 3.11（所有平台统一支持基线）
 - **Linux**：SocketCAN（需硬件 CAN 接口）
 - **macOS / Windows**：通过 Galaxea USB2CANFD 适配器连接，SDK 自动使用 gs_usb 用户态后端
-- URDF 模型文件（包内自带，见 `a1z/robot_models/a1z/`。默认使用 `A1Z_Flange.urdf`；启用夹爪时使用 `A1Z_G1Z.urdf`）
+- URDF 模型文件随 SDK 提供，并从 [robot_descriptions](https://github.com/userguide-galaxea/robot_descriptions/tree/galaxea/main/a1z_description) 同步。默认使用 `A1Z_Flange.urdf`，启用夹爪时使用 `A1Z_G1Z.urdf`。
 
 > 跨平台支持详情见 [跨平台 CAN 配置](#跨平台-can-配置) 章节。
 
@@ -136,9 +136,9 @@ python -m pip install -e ".[gs_usb]"
 
 > 注意：macOS 默认的 zsh 会把 `[...]` 当作通配符并报 `no matches found`，所以引号不能省。Windows 还需要允许 libusb 访问设备的驱动；现有驱动可用时不要强制替换。
 
-### 配置文件（可选）
+### 配置文件
 
-支持 `--config` 的示例、工具和 `a1zctl serve` 默认读取仓库根目录的 `config.yaml`。需要临时使用其他配置时，可传入 `--config PATH`。显式传入的命令行参数优先。
+示例、诊断和标定工具及 `a1zctl serve` 会自动读取仓库根目录的 `config.yaml`。请在运行前编辑此文件。
 
 - `with_gripper: false`（默认）：无夹爪，使用 `A1Z_Flange.urdf`。
 - `with_gripper: true`：启用 G1Z 夹爪，自动选用 `A1Z_G1Z.urdf`。
@@ -160,8 +160,6 @@ with_gripper: false
 | `gravity_comp_factor` | 重力补偿系数，`0` 关闭，`1` 全额补偿。 |
 | `zero_gravity_mode` | `true` 为零力漂浮，`false` 为位置保持。省略时按命令默认模式运行。 |
 | `default_kp`, `default_kd` | 按 J1–J6 排列的位置和速度增益。取消对应行的注释并修改数值，可覆盖[代码默认值](#默认控制参数)。 |
-
-CAN 帧间隔通过 `get_a1z_robot(inter_cmd_gap_us=...)` 设置。
 
 使用示例：
 
@@ -250,19 +248,6 @@ SDK 默认按平台自动选择 CAN 后端：
 
 不传 `--bustype` 时使用 OS 默认值：Linux 默认 `socketcan`/`can0`，macOS/Windows 默认 `gs_usb`/设备序号 `0`。
 
-#### CAN 命令帧间隔（Pacing）
-
-每个控制周期 SDK 会向 6 个关节各发一帧 MIT 指令。默认在**相邻命令帧之间插入 250 µs 间隔**，避免前一帧电机的应答时隙被后一帧占用（修复了脉冲式连发时末端腕关节反馈/目标锁存饿死的问题）。该间隔在电机链内部实现，一体化夹爪帧也遵循同样的间隔。
-
-```python
-robot = get_a1z_robot()                          # 默认 250 µs
-robot = get_a1z_robot(inter_cmd_gap_us=0)        # 关闭 pacing（恢复旧的连发行为）
-```
-
-- `inter_cmd_gap_us=None`（默认）→ 250 µs；`0` 关闭；超过 **500 µs** 在构造时抛 `ValueError`（6 段间隔必须容纳在 4 ms 控制周期内）。
-- 该参数是 `get_a1z_robot()` 的构造参数，不经 YAML 配置文件设置，SDK 也不读取相关环境变量。
-- 定时精度依赖 CAN 后端：SocketCAN（内核态）较可靠；gs_usb 用户态后端（macOS/Windows）实际间隔可能偏大，必要时可按后端用 `inter_cmd_gap_us` 重调。
-
 ## 快速开始
 
 ### 使用 example 脚本
@@ -285,27 +270,7 @@ python examples/position_hold.py --q_target_deg 0,30,-20,-15,0,0 --speed 0.5
 
 > ⚠️ **如果上述命令报错或机械臂无反应**，请跳转到 [CAN 通信故障排查](docs/can-troubleshooting.md#can-通信故障排查)。
 
-更多用法  [零力示教与回放](docs/sdk-guide.md#零力示教与回放) · [夹爪](docs/sdk-guide.md#夹爪) · [API 参考](docs/sdk-guide.md#api-参考)
-
-### 使用 a1zctl 服务端（可用于openclaw交互）
-
-```bash
-# 终端 1：按 config.yaml 启动服务端
-python tools/a1zctl serve
-
-# 终端 2：发送控制指令
-python tools/a1zctl status              # 查看关节状态（含夹爪开度）
-python tools/a1zctl move --preset home  # 移动到预置位
-python tools/a1zctl move 0,60,-60,0,0,0 --speed 0.5
-python tools/a1zctl gripper 0.5         # 夹爪到 50% 开度
-python tools/a1zctl dance --moves salute,wave,nod
-python tools/a1zctl info                # 查看所有预置位与限位
-python tools/a1zctl stop               # 停止服务端
-```
-
-服务仅接受本机连接：Linux/macOS 使用 `/tmp/a1z.sock` Unix socket；Windows
-使用 `tcp://127.0.0.1:43110` 回环 TCP，以兼容没有 `socket.AF_UNIX` 的 Python
-发行版。客户端会自动选择对应传输，无需额外参数或开放防火墙端口。
+更多用法  [零力示教与回放](docs/sdk-guide.md#零力示教与回放) · [夹爪](docs/sdk-guide.md#夹爪) · [a1zctl](docs/sdk-guide.md#使用-a1zctl-服务端可用于openclaw交互) · [API 参考](docs/sdk-guide.md#api-参考)
 
 ## 工具
 
@@ -385,8 +350,7 @@ tau_id = self._gravity_model.compute_inverse_dynamics(q, cmd.vel, cmd.acc)
 torques_urdf  = cmd.torque_ff + tau_id * self._gravity_torque_scale * self.gravity_comp_factor
 motor_torques = np.clip(torques_urdf * self._joint_sign, -self._torque_clip, self._torque_clip)
 
-# 4. 经电机链下发（相邻命令帧按 inter_cmd_gap_s 间隔 pacing），
-#    并缓存一帧纯重力补偿安全保持帧，供反馈失效时重发
+# 4. 经电机链下发，并缓存纯重力补偿保持帧供反馈失效时重发
 self._motor_chain.send_commands(
     pos=cmd.pos * self._joint_sign,
     vel=cmd.vel * self._joint_sign,
@@ -416,7 +380,6 @@ self._command.kd = self._default_kd.copy()  # [5.0, 5.0, 5.0, 2.0776, 1.5059, 1.
 
 ## 安全注意事项
 
-本 SDK 未通过功能安全认证。
 
 - 请将机械臂牢固安装在稳定基座上，清空其全部可达空间，并确保操作者可随时按下物理急停。
 - 装有 G1Z 夹爪时，在 `config.yaml` 中设置 `with_gripper: true`，使动力学模型包含夹爪质量。
@@ -470,7 +433,6 @@ self._command.kd = self._default_kd.copy()  # [5.0, 5.0, 5.0, 2.0776, 1.5059, 1.
 | 默认 KP | `[146.8988, 62.9454, 89.2416, 120.0, 40.0, 100.0]` |
 | 默认 KD | `[5.0, 5.0, 5.0, 2.0776, 1.5059, 1.2553]` |
 | 命令增益上限 | kp ≤ 200，kd ≤ 5（`command_joint_state` / `move_joints` 自定义增益越界拒绝） |
-| CAN 命令帧间隔 | 250 µs（`inter_cmd_gap_us` 可调，0=关闭，上限 500 µs） |
 | 关节坐标系符号 | `[1, 1, -1, 1, -1, 1]` (关节3，5与URDF方向相反) |
 | 重力扭矩缩放 | `[1, 1, 1, 1, 1, 1]` |
 | 最大重力扭矩 | `[50, 50, 50, 24, 10, 10]` Nm |
@@ -627,7 +589,7 @@ a1z/
 - Python >= 3.11 (the common supported baseline on all platforms)
 - **Linux**: SocketCAN (hardware CAN interface required)
 - **macOS / Windows**: Connects via the Galaxea USB2CANFD adapter; the SDK automatically uses the gs_usb userspace backend
-- URDF model files (bundled, see `a1z/robot_models/a1z/`; defaults to `A1Z_Flange.urdf`, use `A1Z_G1Z.urdf` with `with_gripper=True`)
+- URDF model files are bundled with the SDK and synchronized from [robot_descriptions](https://github.com/userguide-galaxea/robot_descriptions/tree/galaxea/main/a1z_description). The default is `A1Z_Flange.urdf`; `with_gripper=True` selects `A1Z_G1Z.urdf`.
 
 > See the [Cross-Platform CAN Configuration](#cross-platform-can-configuration) section for details.
 
@@ -660,9 +622,9 @@ python -m pip install -e ".[gs_usb]"
 
 > Note: zsh (the default macOS shell) treats `[...]` as a glob and fails with `no matches found` — the quotes are required. Windows also needs a driver that permits libusb access; do not replace a working existing driver unnecessarily.
 
-### Configuration File (Optional)
+### Configuration File
 
-Examples and tools that support `--config`, including `a1zctl serve`, read `config.yaml` from the repository root by default. Pass `--config PATH` to use another file. Explicit command-line flags override file settings.
+The examples, diagnostic and calibration tools, and `a1zctl serve` automatically read `config.yaml` from the repository root. Edit this file before running them.
 
 - `with_gripper: false` (default) selects the arm-only `A1Z_Flange.urdf`.
 - `with_gripper: true` enables the G1Z gripper and selects `A1Z_G1Z.urdf`.
@@ -684,8 +646,6 @@ with_gripper: false
 | `gravity_comp_factor` | Gravity compensation scale. Use `0` for off and `1` for full compensation. |
 | `zero_gravity_mode` | `true` floats and `false` holds position. Omit to use the command's default mode. |
 | `default_kp`, `default_kd` | Position and velocity gains in J1–J6 order. Uncomment the corresponding line and edit its values to override the [SDK defaults](#default-control-parameters). |
-
-Set CAN pacing with `get_a1z_robot(inter_cmd_gap_us=...)`.
 
 Example usage:
 
@@ -774,19 +734,6 @@ The SDK automatically selects the CAN backend by platform:
 
 When `--bustype` is omitted, the OS default is used: Linux defaults to `socketcan`/`can0`; macOS/Windows default to `gs_usb`/device index `0`.
 
-#### CAN Command Pacing
-
-Each control tick sends one MIT frame per joint. By default the SDK inserts a **250 µs gap between consecutive command frames** so a motor's answer slot is never occupied by its predecessor's answer — this fixes the feedback/target-latch starvation observed on the wrist joint at the end of a back-to-back burst. The gap is implemented inside the motor chain, and the integrated gripper frame honors the same pacing.
-
-```python
-robot = get_a1z_robot()                          # default 250 µs
-robot = get_a1z_robot(inter_cmd_gap_us=0)        # disable pacing (legacy back-to-back burst)
-```
-
-- `inter_cmd_gap_us=None` (default) → 250 µs; `0` disables pacing; values above **500 µs** raise `ValueError` at construction (the 6 paced boundaries must fit inside the 4 ms control tick).
-- The gap is a `get_a1z_robot()` constructor argument — it is not exposed via the YAML config file, and the SDK reads no environment variable for it.
-- Timing precision depends on the CAN backend: SocketCAN (kernel) is reliable; on userspace backends (gs_usb on macOS/Windows) actual gaps may be longer. Retune per backend with `inter_cmd_gap_us` if needed.
-
 ## Quick Start
 
 ### Example Scripts
@@ -809,29 +756,7 @@ python examples/position_hold.py --q_target_deg 0,30,-20,-15,0,0 --speed 0.5
 
 > ⚠️ **If the commands above error out or the arm does not respond**, jump to [CAN Communication Troubleshooting](docs/can-troubleshooting.md#can-communication-troubleshooting).
 
-More usage examples  [Zero-Force Teaching and Playback](docs/sdk-guide.md#zero-force-teaching-and-playback) · [Gripper](docs/sdk-guide.md#gripper) · [API Reference](docs/sdk-guide.md#api-reference)
-
-### Using the a1zctl Server
-
-```bash
-# Terminal 1: start the server using config.yaml
-python tools/a1zctl serve
-
-# Terminal 2: send control commands
-python tools/a1zctl status              # show joint state (including gripper)
-python tools/a1zctl move --preset home  # move to preset position
-python tools/a1zctl move 0,60,-60,0,0,0 --speed 0.5
-python tools/a1zctl gripper 0.5         # set gripper to 50% open
-python tools/a1zctl dance --moves salute,wave,nod
-python tools/a1zctl info                # list all presets and limits
-python tools/a1zctl stop               # stop the server
-```
-
-The service accepts local connections only: Linux/macOS use the
-`/tmp/a1z.sock` Unix socket, while Windows uses loopback TCP at
-`tcp://127.0.0.1:43110` for compatibility with Python distributions that do
-not provide `socket.AF_UNIX`. The client selects the transport automatically;
-no extra argument or firewall port is required.
+More usage examples  [Zero-Force Teaching and Playback](docs/sdk-guide.md#zero-force-teaching-and-playback) · [Gripper](docs/sdk-guide.md#gripper) · [a1zctl](docs/sdk-guide.md#using-the-a1zctl-server) · [API Reference](docs/sdk-guide.md#api-reference)
 
 ## Tools
 
@@ -899,7 +824,7 @@ The SDK's `_update()` runs at each control cycle (default 250 Hz); the send path
 2. On stale/incomplete feedback, first resend the cached gravity-only MIT hold frame, then raise a recoverable fault (see [Fault Policy](#fault-policy)); confirmed hard faults (over-temperature / over-speed / motor errors) disable the motors immediately
 3. Compute full inverse dynamics `τ_id(q, vel, acc)` (gravity + Coriolis + inertia) via Pinocchio RNEA
 4. Compose final torque: `τ = torque_ff + τ_id × scale × factor` — PD + gravity compensation
-5. Clip to the per-joint safe range and send via the motor chain (consecutive frames paced by `inter_cmd_gap_s`), caching a gravity-only safe-hold frame for the feedback-loss resend path
+5. Clip to the per-joint safe range and send via the motor chain, caching a gravity-only safe-hold frame for the feedback-loss resend path
 
 ### Zero-Force Float Mode
 
@@ -920,8 +845,6 @@ self._command.kd = self._default_kd.copy()  # [5.0, 5.0, 5.0, 2.0776, 1.5059, 1.
 ```
 
 ## Safety
-
-The SDK has no functional safety certification.
 
 - Mount the arm securely on a stable base, clear its entire reachable workspace, and keep a physical emergency stop within immediate reach.
 - When a G1Z gripper is attached, set `with_gripper: true` in `config.yaml` so the dynamics model includes the gripper mass.
@@ -975,7 +898,6 @@ The control loop runs on an explicit state machine: `STOPPED` / `RUNNING` / `SOF
 | Default KP | `[146.8988, 62.9454, 89.2416, 120.0, 40.0, 100.0]` |
 | Default KD | `[5.0, 5.0, 5.0, 2.0776, 1.5059, 1.2553]` |
 | Command gain caps | kp ≤ 200, kd ≤ 5 (custom gains in `command_joint_state` / `move_joints` are rejected beyond these) |
-| CAN command pacing | 250 µs between frames (tunable via `inter_cmd_gap_us`, 0=off, max 500 µs) |
 | Joint sign | `[1, 1, -1, 1, -1, 1]` (joints 3 and 5 are inverted relative to URDF) |
 | Gravity torque scale | `[1, 1, 1, 1, 1, 1]` |
 | Max gravity torque | `[50, 50, 50, 24, 10, 10]` Nm |

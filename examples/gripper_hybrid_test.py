@@ -19,7 +19,7 @@ import time
 
 import can
 
-from a1z.config import add_config_argument, load_config
+from a1z.config import load_config
 from a1z.motor_drivers.can_backend import open_can_bus
 from a1z.motor_drivers.motor_b_driver import MotorB
 from a1z.robots.gripper import (
@@ -156,18 +156,15 @@ def main() -> None:
         default=["free", "clamp"],
         help="要运行的测试项，默认 free clamp",
     )
-    add_config_argument(parser)
     args = parser.parse_args()
 
-    config = load_config(args.config) if args.config else {}
+    config = load_config()
     channel = args.can or config.get("can_channel") or "can0"
     bustype = args.bustype or config.get("bustype")
 
     run_free  = "free"  in args.tests
     run_clamp = "clamp" in args.tests
 
-    if args.config:
-        print(f"[hybrid] Config={args.config}")
     print(f"[hybrid] SocketCAN={channel}  max_torque={args.torque:.1f} Nm"
           f"  (i_des={args.torque / MOTOR_PEAK_TORQUE_NM:.4f})")
 

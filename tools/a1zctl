@@ -32,7 +32,6 @@ from a1z.robots.server import (  # noqa: E402
     endpoint_label,
     serve,
 )
-from a1z.config import add_config_argument
 
 
 # ---------------------------------------------------------------------------
@@ -79,7 +78,6 @@ def cmd_serve(args: argparse.Namespace) -> None:
         can_channel=args.can,
         with_gripper=args.with_gripper,
         gravity_mode=args.gravity_mode,
-        config_path=args.config,
     )
 
 
@@ -193,7 +191,6 @@ Examples:
                     help="Enable the gripper regardless of the YAML setting")
     sp.add_argument("--gravity-mode", action="store_true", default=None,
                     help="Zero-gravity float mode (default: position hold)")
-    add_config_argument(sp)
 
     # status
     sub.add_parser("status", help="Print current joint positions, velocities, torques")

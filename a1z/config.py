@@ -19,9 +19,8 @@ Usage in a script::
 
     from a1z.config import load_config, config_to_robot_kwargs
 
-    config = load_config(args.config)
+    config = load_config()
     kwargs = config_to_robot_kwargs(config)
-    kwargs.setdefault("can_channel", args.can)
     robot = get_a1z_robot(**kwargs)
 
 Command-line arguments override config-file values.
@@ -29,7 +28,7 @@ Command-line arguments override config-file values.
 
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import numpy as np
 import yaml
@@ -56,27 +55,20 @@ _ROBOT_KWARGS = {
 }
 
 
-def load_config(path: Optional[str] = None) -> Dict[str, Any]:
-    """Load a YAML config file.
-
-    Args:
-        path: YAML file path. If omitted, use the repository's config.yaml
-            when present, or return an empty dict.
-
-    Returns:
-        Dict of config values. Returns an empty dict if the file is empty.
-
-    Raises:
-        FileNotFoundError: If the file does not exist.
-        yaml.YAMLError: If the file cannot be parsed.
-    """
-    if path is None:
-        if not _DEFAULT_CONFIG_PATH.is_file():
-            return {}
-        path = str(_DEFAULT_CONFIG_PATH)
-    with open(path, "r", encoding="utf-8") as f:
+def load_config() -> Dict[str, Any]:
+    """Read the required config.yaml from the repository root."""
+    # Checkout scripts also work with a non-editable SDK installation.
+    script_dir = Path(sys.argv[0]).resolve().parent
+    path = (
+        script_dir.parent / "config.yaml"
+        if script_dir.name in {"examples", "tools"}
+        else _DEFAULT_CONFIG_PATH
+    )
+    with path.open(encoding="utf-8") as f:
         data = yaml.safe_load(f)
-    return data if isinstance(data, dict) else {}
+    if not isinstance(data, dict):
+        raise ValueError(f"Expected a YAML mapping in {path}")
+    return data
 
 
 def config_to_robot_kwargs(config: Dict[str, Any]) -> Dict[str, Any]:
@@ -94,25 +86,3 @@ def config_to_robot_kwargs(config: Dict[str, Any]) -> Dict[str, Any]:
             value = np.array(value, dtype=np.float64)
         kwargs[key] = value
     return kwargs
-
-
-def add_config_argument(parser, default: Optional[str] = None) -> None:
-    """Add a ``--config`` argument to an argparse parser.
-
-    Args:
-        parser: ``argparse.ArgumentParser`` or sub-parser.
-        default: Optional override for the repository's config.yaml path.
-    """
-    if default is None:
-        # A checkout's scripts can also use a non-editable SDK installation.
-        script_dir = Path(sys.argv[0]).resolve().parent
-        checkout_config = script_dir.parent / "config.yaml"
-        if script_dir.name in {"examples", "tools"} and checkout_config.is_file():
-            default = str(checkout_config)
-        elif _DEFAULT_CONFIG_PATH.is_file():
-            default = str(_DEFAULT_CONFIG_PATH)
-    parser.add_argument(
-        "--config",
-        default=default,
-        help="Path to a YAML config file (default: repository config.yaml).",
-    )

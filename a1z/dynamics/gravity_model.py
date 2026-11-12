@@ -12,23 +12,27 @@ except ImportError:
         "conda install -c conda-forge pinocchio; on Linux/macOS use: pip install pin"
     )
 
+from a1z.dynamics.urdf_model import build_arm_model
+
 
 class GravityModel:
     """Compute gravity compensation torques from a URDF using Pinocchio RNEA."""
 
-    def __init__(self, urdf_path: str, mesh_dir: str = ""):
+    def __init__(self, urdf_path: str, mesh_dir: str = "", *, lock_gripper_joints: bool = True):
         """Load URDF and build Pinocchio model.
 
         Args:
             urdf_path: Path to the URDF file.
             mesh_dir: Root directory for mesh resources (optional, not needed
                       for pure dynamics computation).
+            lock_gripper_joints: Lock the A1Z gripper fingers at their URDF
+                                 zero positions for six-axis dynamics.
         """
         urdf_path = os.path.expanduser(urdf_path)
         if not os.path.isfile(urdf_path):
             raise FileNotFoundError(f"URDF not found: {urdf_path}")
 
-        self.model = pinocchio.buildModelFromUrdf(urdf_path)
+        self.model = build_arm_model(urdf_path, lock_gripper_joints)
         self.data = self.model.createData()
         self.nq = self.model.nq
         self.nv = self.model.nv

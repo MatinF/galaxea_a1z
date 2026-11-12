@@ -321,10 +321,9 @@ def serve(
     can_channel: str | None = None,
     with_gripper: bool | None = None,
     gravity_mode: bool | None = None,
-    config_path: str | None = None,
 ) -> None:
     """Start the robot server in the foreground."""
-    kwargs = config_to_robot_kwargs(load_config(config_path))
+    kwargs = config_to_robot_kwargs(load_config())
     if can_channel is not None:
         kwargs["can_channel"] = can_channel
     if with_gripper is not None:

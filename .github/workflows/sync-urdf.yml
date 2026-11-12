@@ -1,0 +1,79 @@
+name: Sync A1Z URDFs
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-a1z-urdf-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the SDK
+        uses: actions/checkout@v4
+
+      - name: Check out the upstream A1Z descriptions
+        uses: actions/checkout@v4
+        with:
+          repository: userguide-galaxea/robot_descriptions
+          ref: galaxea/main
+          path: .upstream-robot-descriptions
+          persist-credentials: false
+          sparse-checkout: |
+            a1z_description/a1z_flange_description/urdf
+            a1z_description/a1z_g1z_description/urdf
+
+      - name: Copy changed models
+        id: models
+        shell: bash
+        run: |
+          set -euo pipefail
+          upstream=".upstream-robot-descriptions"
+          models="a1z/robot_models/a1z"
+          cp "$upstream/a1z_description/a1z_flange_description/urdf/A1Z_Flange.urdf" "$models/A1Z_Flange.urdf"
+          cp "$upstream/a1z_description/a1z_g1z_description/urdf/A1Z_G1Z.urdf" "$models/A1Z_G1Z.urdf"
+          if git diff --quiet -- "$models/A1Z_Flange.urdf" "$models/A1Z_G1Z.urdf"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          revision="$(git -C "$upstream" rev-parse HEAD)"
+          printf '%s\n' \
+            "Repository: https://github.com/userguide-galaxea/robot_descriptions" \
+            "Revision: $revision" \
+            "Flange: a1z_description/a1z_flange_description/urdf/A1Z_Flange.urdf" \
+            "G1Z: a1z_description/a1z_g1z_description/urdf/A1Z_G1Z.urdf" \
+            > "$models/UPSTREAM.txt"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        if: steps.models.outputs.changed == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install SDK and validate models
+        if: steps.models.outputs.changed == 'true'
+        run: |
+          python -m pip install -e .
+          python -m unittest discover -s tests -p 'test_upstream_models.py'
+
+      - name: Commit and push
+        if: steps.models.outputs.changed == 'true'
+        env:
+          UPSTREAM_REVISION: ${{ steps.models.outputs.revision }}
+          TARGET_BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add a1z/robot_models/a1z/A1Z_Flange.urdf a1z/robot_models/a1z/A1Z_G1Z.urdf a1z/robot_models/a1z/UPSTREAM.txt
+          git commit -m "Sync A1Z URDFs from robot_descriptions" -m "Upstream: $UPSTREAM_REVISION"
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"

@@ -47,7 +47,7 @@ from typing import Dict, List, Optional, Tuple
 import can
 import numpy as np
 
-from a1z.config import add_config_argument, load_config
+from a1z.config import load_config
 from a1z.motor_drivers.can_backend import open_can_bus
 from a1z.motor_drivers.motor_a_driver import MotorA
 from a1z.motor_drivers.motor_b_driver import MotorB
@@ -552,7 +552,7 @@ def confirm_active_motor_operation(action: str, assume_yes: bool = False) -> Non
 
 # ── 持续监控 ─────────────────────────────────────────
 
-def run_monitor(bus: can.BusABC, joints: List[int], interval: float = 1.0):
+def run_monitor(bus: can.BusABC, joints: List[int], interval: float = 0.1):
     """持续监控电机状态。"""
     print("持续监控中（Ctrl+C 退出）...\n")
 
@@ -568,6 +568,7 @@ def run_monitor(bus: can.BusABC, joints: List[int], interval: float = 1.0):
     last_fb: Dict[int, dict] = {}
     comm_loss_count: Dict[int, int] = {j: 0 for j in joints}
     iteration = 0
+    next_display = 0.0
 
     try:
         while True:
@@ -608,10 +609,10 @@ def run_monitor(bus: can.BusABC, joints: List[int], interval: float = 1.0):
                     pass
 
             # 收集反馈
-            t_end = time.time() + 0.05
+            t_end = time.monotonic() + 0.05
             received_this_round = set()
-            while time.time() < t_end:
-                msg = bus.recv(timeout=0.01)
+            while (remaining := t_end - time.monotonic()) > 0:
+                msg = bus.recv(timeout=min(0.01, remaining))
                 if msg is None:
                     continue
                 mid = msg.arbitration_id
@@ -634,17 +635,16 @@ def run_monitor(bus: can.BusABC, joints: List[int], interval: float = 1.0):
                     comm_loss_count[j] += 1
 
             # 打印状态
-            if iteration % max(1, int(interval / 0.1)) == 0:
-                # 清屏 + 表头
-                print("\033[2J\033[H", end="")
-                print(f"A1Z 电机监控  (iter={iteration}, Ctrl+C 退出)")
-                print(f"{'─' * 95}")
-                print(
+            now = time.monotonic()
+            if now >= next_display:
+                lines = [
+                    f"A1Z 电机监控  (iter={iteration}, Ctrl+C 退出)",
+                    "─" * 95,
                     f"{'Joint':>5} {'Name':>10} {'Type':>8} {'Pos(deg)':>10} "
                     f"{'Vel(r/s)':>10} {'Eff(Nm)':>9} {'TempM':>5} {'TempMOS':>7} "
-                    f"{'Error':>6} {'Comm':>6}"
-                )
-                print(f"{'─' * 95}")
+                    f"{'Error':>6} {'Comm':>6}",
+                    "─" * 95,
+                ]
 
                 for j in joints:
                     name, motor_type, can_id = JOINT_CONFIG[j]
@@ -652,7 +652,7 @@ def run_monitor(bus: can.BusABC, joints: List[int], interval: float = 1.0):
                     lost = comm_loss_count[j]
 
                     if fb is None:
-                        print(
+                        lines.append(
                             f"{j:>5} {name:>10} {motor_type:>8} {'N/A':>10} "
                             f"{'N/A':>10} {'N/A':>9} {'N/A':>5} {'N/A':>7} "
                             f"{'N/A':>6} {'LOST':>6}"
@@ -673,7 +673,7 @@ def run_monitor(bus: can.BusABC, joints: List[int], interval: float = 1.0):
                         else "OK"
                     )
 
-                    print(
+                    lines.append(
                         f"{j:>5} {name:>10} {motor_type:>8} {pos_deg:>10.2f} "
                         f"{vel:>10.3f} {eff:>9.2f} {temp_m:>5} {temp_mos:>7} "
                         f"{err_str:>6} {comm_str:>6}"
@@ -696,10 +696,13 @@ def run_monitor(bus: can.BusABC, joints: List[int], interval: float = 1.0):
                             warnings.append(f"  [!] Joint {j}: 错误 {msg}")
 
                 if warnings:
-                    print(f"\n{'─' * 95}")
-                    print("警告:")
-                    for w in warnings:
-                        print(w)
+                    lines.extend(["", "─" * 95, "警告:", *warnings])
+
+                screen = "\n".join(lines)
+                if sys.stdout.isatty():
+                    screen = "\033[H" + screen + "\033[J"
+                print(screen, flush=True)
+                next_display = now + interval
 
             time.sleep(0.05)
 
@@ -946,11 +949,10 @@ def main():
                         help="确认已完成安全检查，跳过交互式确认（用于自动化）")
     parser.add_argument("--with-gripper", action="store_true", default=None,
                         help="包含 G1Z 夹爪电机 (joint 6)")
-    add_config_argument(parser)
 
     args = parser.parse_args()
 
-    config = load_config(args.config) if args.config else {}
+    config = load_config()
     channel = args.channel if args.channel is not None else config.get("can_channel", CAN_CHANNEL)
     bustype = args.bustype if args.bustype is not None else config.get("bustype")
     bitrate = args.bitrate if args.bitrate is not None else config.get("bitrate", CAN_BITRATE)
@@ -1020,7 +1022,7 @@ def main():
             print_scan_results(results)
 
         elif args.monitor:
-            run_monitor(bus, joints, interval=1.0)
+            run_monitor(bus, joints)
 
         elif args.listen:
             run_listen(bus, args.duration)

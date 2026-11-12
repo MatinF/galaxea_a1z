@@ -27,7 +27,7 @@ import time
 import numpy as np
 
 from a1z.robots.get_robot import get_a1z_robot
-from a1z.config import add_config_argument, load_config, config_to_robot_kwargs
+from a1z.config import load_config, config_to_robot_kwargs
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
 
@@ -66,12 +66,11 @@ def main():
                         help="Automatically stop holding after N seconds; 0 runs until Ctrl+C.")
     parser.add_argument("--with-gripper", action="store_true",
                         help="Attach the G1Z gripper (adds 7th DOF).")
-    add_config_argument(parser)
     args = parser.parse_args()
     if not np.isfinite(args.duration) or args.duration < 0:
         raise ValueError("--duration must be a finite value >= 0")
 
-    config = load_config(args.config) if args.config else {}
+    config = load_config()
     kwargs = config_to_robot_kwargs(config)
     if args.can is not None:
         kwargs["can_channel"] = args.can

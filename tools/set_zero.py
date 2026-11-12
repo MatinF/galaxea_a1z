@@ -16,7 +16,7 @@ import time
 
 import can
 
-from a1z.config import add_config_argument, load_config
+from a1z.config import load_config
 from a1z.motor_drivers.can_backend import open_can_bus
 
 # ── Configuration ─────────────────────────────────────────
@@ -150,11 +150,10 @@ Examples:
                              "Default: socketcan on Linux, gs_usb on macOS/Windows.")
     parser.add_argument("--bitrate", type=int, default=CAN_BITRATE, help=f"CAN bitrate (default: {CAN_BITRATE})")
     parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompt")
-    add_config_argument(parser)
 
     args = parser.parse_args()
 
-    config = load_config(args.config) if args.config else {}
+    config = load_config()
     channel = args.channel or config.get("can_channel") or CAN_CHANNEL
     bustype = args.bustype or config.get("bustype")
 
@@ -174,8 +173,6 @@ Examples:
     print("=" * 60)
     print("  A1Z Motor Zero Calibration")
     print("=" * 60)
-    if args.config:
-        print(f"\nConfig: {args.config}")
     print(f"\nCAN channel: {channel}  bitrate: {args.bitrate}  backend: {bustype or 'auto'}")
     print(f"\nJoints to calibrate (current position -> zero):")
     for j in joints:

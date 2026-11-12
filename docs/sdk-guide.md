@@ -8,6 +8,12 @@
 
 首次运行实机示例前，请阅读 [快速开始](../README.md#快速开始)和[安全注意事项](../README.md#安全注意事项)。命令从仓库根目录运行。
 
+### URDF 模型
+
+SDK 内置的 A1Z 模型定期从 [robot_descriptions](https://github.com/userguide-galaxea/robot_descriptions/tree/galaxea/main/a1z_description) 同步，对应的上游提交记录在 [UPSTREAM.txt](../a1z/robot_models/a1z/UPSTREAM.txt)。更新 SDK 后即可使用同步的模型。
+
+G1Z 的动力学和运动学默认将两根手指关节固定在 URDF 零位，计算 J1–J6 时保留夹爪的质量和惯量。使用 `GravityModel` 或 `Kinematics` 时，可传入 `lock_gripper_joints=False` 加载完整关节模型。
+
 ### 零力示教与回放
 
 `teach_and_play.py` 分为两个子命令：`record`（录制）和 `play`（回放）。
@@ -178,11 +184,50 @@ T = kin.fk(q)
 converged, q_sol = kin.ik(target_pose, init_q=q0)
 ```
 
+### CAN 命令帧间隔（Pacing）
+
+每个控制周期 SDK 会向 6 个关节各发一帧 MIT 指令。默认在**相邻命令帧之间插入 250 µs 间隔**，避免前一帧电机的应答时隙被后一帧占用（修复了脉冲式连发时末端腕关节反馈/目标锁存饿死的问题）。该间隔在电机链内部实现，一体化夹爪帧也遵循同样的间隔。
+
+```python
+robot = get_a1z_robot()                          # 默认 250 µs
+robot = get_a1z_robot(inter_cmd_gap_us=0)        # 关闭 pacing（恢复旧的连发行为）
+```
+
+- `inter_cmd_gap_us=None`（默认）→ 250 µs；`0` 关闭；超过 **500 µs** 在构造时抛 `ValueError`（6 段间隔必须容纳在 4 ms 控制周期内）。
+- 该参数是 `get_a1z_robot()` 的构造参数，不经 YAML 配置文件设置，SDK 也不读取相关环境变量。
+- 定时精度依赖 CAN 后端：SocketCAN（内核态）较可靠；gs_usb 用户态后端（macOS/Windows）实际间隔可能偏大，必要时可按后端用 `inter_cmd_gap_us` 重调。
+
+### 使用 a1zctl 服务端（可用于openclaw交互）
+
+```bash
+# 终端 1：按 config.yaml 启动服务端
+python tools/a1zctl serve
+
+# 终端 2：发送控制指令
+python tools/a1zctl status              # 查看关节状态（含夹爪开度）
+python tools/a1zctl move --preset home  # 移动到预置位
+python tools/a1zctl move 0,60,-60,0,0,0 --speed 0.5
+python tools/a1zctl gripper 0.5         # 夹爪到 50% 开度
+python tools/a1zctl dance --moves salute,wave,nod
+python tools/a1zctl info                # 查看所有预置位与限位
+python tools/a1zctl stop               # 停止服务端
+```
+
+服务仅接受本机连接：Linux/macOS 使用 `/tmp/a1z.sock` Unix socket；Windows
+使用 `tcp://127.0.0.1:43110` 回环 TCP，以兼容没有 `socket.AF_UNIX` 的 Python
+发行版。客户端会自动选择对应传输，无需额外参数或开放防火墙端口。
+
 <a id="en"></a>
 
 ## English
 
 Read the [quick start](../README.md#quick-start) and [safety instructions](../README.md#safety) before running hardware examples. Run the commands from the repository root.
+
+### URDF models
+
+The bundled A1Z models are synchronized from [robot_descriptions](https://github.com/userguide-galaxea/robot_descriptions/tree/galaxea/main/a1z_description). The upstream revision is recorded in [UPSTREAM.txt](../a1z/robot_models/a1z/UPSTREAM.txt). Update the SDK to use the synchronized models.
+
+For G1Z dynamics and kinematics, the finger joints are locked at their URDF zero positions by default. Their mass and inertia remain in the J1–J6 model. Pass `lock_gripper_joints=False` to `GravityModel` or `Kinematics` to load all joints.
 
 ### Zero-Force Teaching and Playback
 
@@ -352,3 +397,38 @@ T = kin.fk(q)
 # Inverse kinematics (damped least squares)
 converged, q_sol = kin.ik(target_pose, init_q=q0)
 ```
+
+### CAN Command Pacing
+
+Each control tick sends one MIT frame per joint. By default the SDK inserts a **250 µs gap between consecutive command frames** so a motor's answer slot is never occupied by its predecessor's answer — this fixes the feedback/target-latch starvation observed on the wrist joint at the end of a back-to-back burst. The gap is implemented inside the motor chain, and the integrated gripper frame honors the same pacing.
+
+```python
+robot = get_a1z_robot()                          # default 250 µs
+robot = get_a1z_robot(inter_cmd_gap_us=0)        # disable pacing (legacy back-to-back burst)
+```
+
+- `inter_cmd_gap_us=None` (default) → 250 µs; `0` disables pacing; values above **500 µs** raise `ValueError` at construction (the 6 paced boundaries must fit inside the 4 ms control tick).
+- The gap is a `get_a1z_robot()` constructor argument — it is not exposed via the YAML config file, and the SDK reads no environment variable for it.
+- Timing precision depends on the CAN backend: SocketCAN (kernel) is reliable; on userspace backends (gs_usb on macOS/Windows) actual gaps may be longer. Retune per backend with `inter_cmd_gap_us` if needed.
+
+### Using the a1zctl Server
+
+```bash
+# Terminal 1: start the server using config.yaml
+python tools/a1zctl serve
+
+# Terminal 2: send control commands
+python tools/a1zctl status              # show joint state (including gripper)
+python tools/a1zctl move --preset home  # move to preset position
+python tools/a1zctl move 0,60,-60,0,0,0 --speed 0.5
+python tools/a1zctl gripper 0.5         # set gripper to 50% open
+python tools/a1zctl dance --moves salute,wave,nod
+python tools/a1zctl info                # list all presets and limits
+python tools/a1zctl stop               # stop the server
+```
+
+The service accepts local connections only: Linux/macOS use the
+`/tmp/a1z.sock` Unix socket, while Windows uses loopback TCP at
+`tcp://127.0.0.1:43110` for compatibility with Python distributions that do
+not provide `socket.AF_UNIX`. The client selects the transport automatically;
+no extra argument or firewall port is required.

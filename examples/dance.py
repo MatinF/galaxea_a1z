@@ -23,7 +23,7 @@ import time
 import numpy as np
 
 from a1z.robots.get_robot import get_a1z_robot
-from a1z.config import add_config_argument, load_config, config_to_robot_kwargs
+from a1z.config import load_config, config_to_robot_kwargs
 
 
 def _deg(*angles: float) -> np.ndarray:
@@ -166,10 +166,9 @@ def main() -> None:
         default=",".join(DEFAULT_ORDER),
         help=f"Comma-separated list of moves to perform (default: {','.join(DEFAULT_ORDER)}).",
     )
-    add_config_argument(parser)
     args = parser.parse_args()
 
-    config = load_config(args.config) if args.config else {}
+    config = load_config()
     kwargs = config_to_robot_kwargs(config)
     if args.can is not None:
         kwargs["can_channel"] = args.can

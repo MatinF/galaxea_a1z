@@ -29,7 +29,7 @@ import tty
 
 import can
 
-from a1z.config import add_config_argument, load_config
+from a1z.config import load_config
 from a1z.motor_drivers.can_backend import open_can_bus
 from a1z.motor_drivers.motor_b_driver import MotorB
 from a1z.robots.gripper import GRIPPER_CAN_ID, GRIPPER_MOTOR_RANGES
@@ -134,10 +134,9 @@ Examples:
                         help="Half of total gripper travel in rad (default: 2.87). "
                              "After calibration: open_rad=-X, close_rad=+X")
     parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation")
-    add_config_argument(parser)
     args = parser.parse_args()
 
-    config = load_config(args.config) if args.config else {}
+    config = load_config()
     channel = args.can or config.get("can_channel") or "can0"
     bustype = args.bustype or config.get("bustype")
 
@@ -146,8 +145,6 @@ Examples:
     print("=" * 60)
     print("  Gripper Center-Point Calibration")
     print("=" * 60)
-    if args.config:
-        print(f"  Config   : {args.config}")
     print(f"  CAN      : {channel}")
     print(f"  Motor ID : 0x{GRIPPER_CAN_ID:02X}")
     print(f"  Half travel: {half:.2f} rad")
