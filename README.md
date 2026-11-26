@@ -34,6 +34,10 @@ A1Z 六轴机械臂的开源 Python SDK，面向机器人研发、算法验证�
 - 基座、腕部相机支架、J6 输出法兰的 STEP/STP 模型，以及基座和法兰的 PDF 图纸。[A1Z CAD](https://github.com/userguide-galaxea/CAD_files/tree/main/A1Z)
 - G1Z 夹指的标准版和加强筋版 STEP 模型，附外观预览。[G1Z 夹指 3D 打印件](https://github.com/userguide-galaxea/CAD_files/tree/main/G1Z)
 
+| 标准版 | 加强筋版 |
+| :---: | :---: |
+| <a href="https://raw.githubusercontent.com/userguide-galaxea/CAD_files/main/G1Z/previews/g1z_gripper_finger_3d_print.png"><img src="https://raw.githubusercontent.com/userguide-galaxea/CAD_files/main/G1Z/previews/g1z_gripper_finger_3d_print.png" alt="标准版 G1Z 夹指" width="220"></a> | <a href="https://raw.githubusercontent.com/userguide-galaxea/CAD_files/main/G1Z/previews/g1z_gripper_finger_3d_print_reinforced.png"><img src="https://raw.githubusercontent.com/userguide-galaxea/CAD_files/main/G1Z/previews/g1z_gripper_finger_3d_print_reinforced.png" alt="加强筋版 G1Z 夹指" width="220"></a> |
+
 ## 功能特性
 
 - **跨平台 CAN 后端**：Linux 使用 SocketCAN，macOS/Windows 可通过 `gs_usb` 用户态后端连接 Galaxea USB2CANFD 适配器，也可选 PEAK PCAN-USB。
@@ -526,6 +530,10 @@ Repository: [github.com/userguide-galaxea/GALAXEA-A1Z](https://github.com/usergu
 
 - STEP/STP models for the base, wrist camera mount, and J6 output flange, plus PDF drawings for the base and flange. [A1Z CAD](https://github.com/userguide-galaxea/CAD_files/tree/main/A1Z)
 - Standard and rib-reinforced G1Z gripper finger STEP models with previews. [G1Z Gripper Fingers for 3D Printing](https://github.com/userguide-galaxea/CAD_files/tree/main/G1Z)
+
+| Standard | Rib-reinforced |
+| :---: | :---: |
+| <a href="https://raw.githubusercontent.com/userguide-galaxea/CAD_files/main/G1Z/previews/g1z_gripper_finger_3d_print.png"><img src="https://raw.githubusercontent.com/userguide-galaxea/CAD_files/main/G1Z/previews/g1z_gripper_finger_3d_print.png" alt="Standard G1Z gripper finger" width="220"></a> | <a href="https://raw.githubusercontent.com/userguide-galaxea/CAD_files/main/G1Z/previews/g1z_gripper_finger_3d_print_reinforced.png"><img src="https://raw.githubusercontent.com/userguide-galaxea/CAD_files/main/G1Z/previews/g1z_gripper_finger_3d_print_reinforced.png" alt="Rib-reinforced G1Z gripper finger" width="220"></a> |
 
 ## Features
 
