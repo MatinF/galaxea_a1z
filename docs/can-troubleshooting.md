@@ -114,7 +114,7 @@ On Windows, check the Galaxea USB2CANFD adapter and its current driver in Device
 - The USB-CANFD adapter is plugged in and seated firmly
 - Both ends of the CAN bus are wired correctly and not loose
 - The arm is powered on
-- The CAN termination resistor is installed correctly (see [CAN bus setup](../README.md#configure-the-can-bus-socketcan))
+- The CAN termination resistor is installed correctly (see [CAN bus setup](../README_EN.md#configure-the-can-bus-socketcan))
 
 ### 3. Linux: check the kernel version and fix
 

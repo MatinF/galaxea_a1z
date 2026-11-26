@@ -221,7 +221,7 @@ python tools/a1zctl stop               # 停止服务端
 
 ## English
 
-Read the [quick start](../README.md#quick-start) and [safety instructions](../README.md#safety) before running hardware examples. Run the commands from the repository root.
+Read the [quick start](../README_EN.md#quick-start) and [safety instructions](../README_EN.md#safety) before running hardware examples. Run the commands from the repository root.
 
 ### URDF models
 
@@ -368,7 +368,7 @@ get_a1z_robot(
 |--------|-------------|
 | `start(initial_kp, initial_kd)` | Enable motors and start the control loop (gripper homing included); only allowed from `STOPPED` — otherwise raises `RuntimeError`; after a hard fault the object cannot be restarted (recreate it) |
 | `stop()` | Stop the control loop and disable all motors; does **not** shut down the CAN bus (the bus is closed on object destruction or by the owning caller) |
-| `estop(reason, fault_code) -> bool` | Soft emergency stop: kp=0, kd halved, position pinned to the current pose; gravity compensation keeps running and **motors stay enabled**; see [Safety State Machine](../README.md#safety-state-machine) |
+| `estop(reason, fault_code) -> bool` | Soft emergency stop: kp=0, kd halved, position pinned to the current pose; gravity compensation keeps running and **motors stay enabled**; see [Safety State Machine](../README_EN.md#safety-state-machine) |
 | `release(expected_fault_code=None) -> bool` | Release a soft estop / hold back to `RUNNING`; requires fresh feedback and a matching state — returns `False` (and holds) otherwise |
 | `hold_position(reason, fault_code) -> bool` | Latch a strict full-gain MIT position hold (`FAULT_HOLD`) while the control loop stays alive |
 | `hold_last_command() -> bool` | Keep the last queued position target and clear motion feedforward (no fault latched; teleop input-loss behavior) |
@@ -377,7 +377,7 @@ get_a1z_robot(
 | `get_joint_pos() -> np.ndarray` | Get current joint angles (rad); returns 7-element array when gripper is attached (7th = normalized gripper position) |
 | `get_joint_state() -> dict` | Get `{pos, vel, eff}` (arm joints only) |
 | `get_observations() -> dict` | Get `{joint_pos, joint_vel, joint_eff}`; includes `gripper_pos` when a gripper is attached |
-| `command_joint_pos(pos) -> bool` | Set target joint angles (out-of-limits targets are always clipped, see [Joint Limit Handling](../README.md#joint-limit-handling)); accepts 7-element array (7th = gripper [0, 1]); returns `False` when rejected (e.g. while estopped) |
+| `command_joint_pos(pos) -> bool` | Set target joint angles (out-of-limits targets are always clipped, see [Joint Limit Handling](../README_EN.md#joint-limit-handling)); accepts 7-element array (7th = gripper [0, 1]); returns `False` when rejected (e.g. while estopped) |
 | `command_joint_state(joint_state) -> bool` | Set target joint angles + custom gains; out-of-range vel/kp/kd/acc/torque_ff rejects the whole frame (`False`) |
 | `command_gripper(value)` | Set gripper target position [0.0=closed, 1.0=fully open] |
 | `get_gripper_pos() -> float\|None` | Get current gripper command position; returns None without gripper |
