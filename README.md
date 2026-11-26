@@ -32,6 +32,7 @@ A1Z 六轴机械臂的开源 Python SDK，面向机器人研发、算法验证�
   <a href="https://raw.githubusercontent.com/userguide-galaxea/robot_descriptions/galaxea/main/a1z_description/a1z_g1z_description/previews/a1z_g1z.png"><img src="https://raw.githubusercontent.com/userguide-galaxea/robot_descriptions/galaxea/main/a1z_description/a1z_g1z_description/previews/a1z_g1z.png" alt="A1Z 带 G1Z 夹爪的 URDF 外观" width="420"></a>
 
 - 基座、腕部相机支架、J6 输出法兰的 STEP/STP 模型，以及基座和法兰的 PDF 图纸。[A1Z CAD](https://github.com/userguide-galaxea/CAD_files/tree/main/A1Z)
+- G1Z 夹指的标准版和加强筋版 STEP 模型，附外观预览。[G1Z 夹指 3D 打印件](https://github.com/userguide-galaxea/CAD_files/tree/main/G1Z)
 
 ## 功能特性
 
@@ -524,6 +525,7 @@ Repository: [github.com/userguide-galaxea/GALAXEA-A1Z](https://github.com/usergu
   <a href="https://raw.githubusercontent.com/userguide-galaxea/robot_descriptions/galaxea/main/a1z_description/a1z_g1z_description/previews/a1z_g1z.png"><img src="https://raw.githubusercontent.com/userguide-galaxea/robot_descriptions/galaxea/main/a1z_description/a1z_g1z_description/previews/a1z_g1z.png" alt="A1Z URDF exterior with G1Z gripper" width="420"></a>
 
 - STEP/STP models for the base, wrist camera mount, and J6 output flange, plus PDF drawings for the base and flange. [A1Z CAD](https://github.com/userguide-galaxea/CAD_files/tree/main/A1Z)
+- Standard and rib-reinforced G1Z gripper finger STEP models with previews. [G1Z Gripper Fingers for 3D Printing](https://github.com/userguide-galaxea/CAD_files/tree/main/G1Z)
 
 ## Features
 
